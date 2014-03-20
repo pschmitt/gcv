@@ -1,17 +1,22 @@
-// The following short JSON file called "data.json" is parsed
-// in the code below. It must be in the project's "data" folder.
-//
-// {
-//   "id": 0,
-//   "species": "Panthera leo",
-//   "name": "Lion"
-// }
+import java.util.Properties;
+
 
 JSONArray json;
 
+Properties loadCommandLine() {
+  Properties props = new Properties();
+  props.setProperty("repo", args[0]);
+  return props;
+}
+
 void setup() {
   size(400, 400);
-  json = loadJSONArray("https://api.github.com/repos/twbs/bootstrap/stats/contributors");
+
+  // Get CLI parameters
+  Properties props = loadCommandLine();
+  String repository = props.getProperty("repo", "No repository specified.");
+
+  json = loadJSONArray("https://api.github.com/repos/" + repository +  "/stats/contributors");
 
   for (int i = 0; i < json.size(); i++) {
       JSONObject current = json.getJSONObject(i);
@@ -23,6 +28,6 @@ void setup() {
       println("Author " + login + " made "  + contributions + " contributions");
 
   }
-
-
 }
+
+// vim: set et ts=2 :

@@ -1,8 +1,14 @@
 import java.util.Properties;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.GregorianCalendar;
 
 String repository;
 JSONArray json;
 color[] colors;
+int weeksSinceCreation;
 int maxContributions;
 float rotationAngle;
 float customRotationAngle;
@@ -28,11 +34,30 @@ void setup() {
 
   smooth();
 
+
   // Get CLI parameters
   Properties props = loadCommandLine();
   repository = props.getProperty("repo", "No repository specified.");
 
-  json = loadJSONArray("https://api.github.com/repos/" + repository + "/stats/contributors");
+  String githubApi = "https://api.github.com/repos/" + repository;
+  JSONObject repoStats = loadJSONObject(githubApi);
+
+  try {
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    Date d = df.parse(repoStats.getString("created_at"));
+    Date n = new Date();
+
+    long now = n.getTime();
+    long then = d.getTime();
+
+    weeksSinceCreation = (int)Math.abs((now-then)/(1000*60*60*24*7));
+
+    println("Created at: " + d);
+  } catch (ParseException e) {
+    println("Couldn't parse date..");
+  }
+
+  json = loadJSONArray(githubApi + "/stats/contributors");
 
   int contributors = json.size();
   rotationAngle = TWO_PI / contributors;
@@ -138,14 +163,28 @@ void drawData(double maxSized) {
       JSONObject author = current.getJSONObject("author");
       String login = author.getString("login");
       int contributions = current.getInt("total");
+      /* int weeks = current.getJSONArray("weeks").size(); */
+      JSONArray weeksAr =  current.getJSONArray("weeks");
+
       // Actual drawing
-      fill(colors[i]);
+      int alphaValue = 255;
+      for (int j = 0; j < weeksAr.size(); ++j) {
+        if (weeksAr.getJSONObject(j).getInt("c") <= 0)
+          alphaValue -= 10;
+      }
+
+      fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
       rotate(rotationAngle);
       rect(0, 0, 10, (int)(contributions * maxSized));
+      //noFill();
+      /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
+      /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
+      /* arc(0, 0, (int)(contributions * maxSized * 2), (int)(contributions * maxSized * 2), 0, t); */
       pushMatrix();
       {
         translate(10, (int)(contributions * maxSized));
         rotate(HALF_PI);
+        fill(colors[i]);
         text(author.getString("login"), 3, 10);
       }
       popMatrix();

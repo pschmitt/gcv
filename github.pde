@@ -27,7 +27,7 @@ Properties loadCommandLine() {
   Properties props = new Properties();
   // Default to self
   String r = "pschmitt/github-contributions-visualisation";
-  if (args[0] != null) {
+  if (args.length > 0 && args[0] != null) {
     r = args[0];
   }
   props.setProperty("repo", r);
@@ -265,7 +265,7 @@ void drawData(double maxSized) {
         }
 
         fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
-        rect(0, (int)maxSized, 10, (int)(contributions * maxSized));
+        rect(0, (int)maxSized, 10, (int)(contributions * maxSized) - (int)maxSized);
         //noFill();
         /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
         /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */

@@ -20,6 +20,7 @@ JSONArray origData;
 color[] colors;
 
 int weeksSinceCreation;
+int minContributions = 1;
 int maxContributions;
 float rotationAngle;
 float customRotationAngle;
@@ -29,10 +30,6 @@ boolean randomize = true;
 boolean research = false;
 boolean hideAllButMatching = false;
 String searchName = "";
-
-int minContributions = 1;
-
-PFont titleFont;
 
 int lastMousePosX = -1;
 
@@ -154,10 +151,12 @@ void mouseDragged(MouseEvent event) {
 void mouseWheel(MouseEvent event) {
   float e = event.getAmount();
   zoomFactor += e * - ZOOM_FACTOR_STEP;
-  if (zoomFactor < 1.0)
+  if (zoomFactor < 1.0) {
     zoomFactor = 1.0;
-  if (zoomFactor > MAX_ZOOM_FACTOR)
+  }
+  if (zoomFactor > MAX_ZOOM_FACTOR) {
     zoomFactor = MAX_ZOOM_FACTOR;
+  }
 }
 
 void searchKeyPressed() {
@@ -277,8 +276,7 @@ void drawTextAroundElipse(String msg, float r) {
   float arclength = 0;
 
   // For every box
-  for (int i = 0; i < msg.length(); i++)
-  {
+  for (int i = 0; i < msg.length(); i++) {
     // Instead of a constant width, we check the width of each character.
     StringBuilder b = new StringBuilder();
     char c = msg.charAt(i);
@@ -286,7 +284,7 @@ void drawTextAroundElipse(String msg, float r) {
     float w = textWidth(b.toString());
 
     // Each box is centered so we move half the width
-    arclength += w/2;
+    arclength += w / 2;
     // Angle in radians is the arclength divided by the radius
     // Starting on the left side of the circle by adding PI
     float theta = PI + arclength / r;
@@ -294,23 +292,23 @@ void drawTextAroundElipse(String msg, float r) {
     pushMatrix();
     {
       // Polar to cartesian coordinate conversion
-      translate(r*cos(theta), r*sin(theta));
+      translate(r * cos(theta), r * sin(theta));
       // Rotate the box
-      rotate(theta+HALF_PI); // rotation is offset by 90 degrees
+      rotate(theta + HALF_PI); // rotation is offset by 90 degrees
       // Display the character
       fill(127);
-      text(b.toString(),0,0);
+      text(b.toString(), 0, 0);
     }
     popMatrix();
     // Move halfway again
-    arclength += w/2;
+    arclength += w / 2;
   }
 }
 
 void drawTitle(double maxSized) {
   pushStyle();
   {
-    textFont(titleFont);
+    textFont(createFont("Sans", 40, true));
     drawTextAroundElipse(repository, (float )(maxContributions * maxSized));
   }
   popStyle();
@@ -335,6 +333,7 @@ void drawData(double maxSized) {
         // Actual drawing
         int alphaValue = 255;
         for (int j = 0; j < weeksAr.size(); ++j) {
+          // Decrease alpha for each week with no commit
           if (weeksAr.getJSONObject(j).getInt("c") <= 0)
             alphaValue -= 1;
         }
@@ -343,7 +342,7 @@ void drawData(double maxSized) {
         {
           fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
           if (matches) {
-            stroke(color(255,0,0));
+            stroke(color(255, 0, 0));
           } else {
             stroke(0);
           }
@@ -353,7 +352,7 @@ void drawData(double maxSized) {
             translate(5, (int)(contributions * maxSized));
             rotate(HALF_PI);
             if (matches) {
-              fill(color(255,0,0));
+              fill(color(255, 0, 0));
             } else {
               fill(colors[i]);
             }
@@ -511,9 +510,9 @@ void draw() {
   clear();
   pushMatrix();
   {
-    translate(width/2, height/2);
+    translate(width / 2, height / 2);
 
-    int maxSize = min(width/2, height/2) - 40;
+    int maxSize = min(width / 2, height / 2) - 40;
     double maxSized = ((double)maxSize / maxContributions) * zoomFactor;
 
     // Draw background
@@ -527,8 +526,7 @@ void draw() {
     drawCenter(maxSized);
   }
   popMatrix();
-  if (research)
-  {
+  if (research) {
     drawResearch();
   }
   if (!hideHelp) {
@@ -546,9 +544,7 @@ void setup() {
   }
 
   // Default font settings
-  titleFont = createFont("Sans", 40, true);
-  PFont normalFont = createFont("Sans", 12, true);
-  textFont(normalFont);
+  textFont(createFont("Sans", 12, true));
   smooth();
 
   // Get CLI parameters

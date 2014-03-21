@@ -174,7 +174,9 @@ void searchKeyPressed() {
       }
       break;
     default:
-      searchName += key;
+      if (Character.isLetterOrDigit(key)) {
+        searchName += key;
+      }
   }
 }
 
@@ -319,8 +321,10 @@ void drawData(double maxSized) {
       int contributions = current.getInt("total");
       JSONArray weeksAr =  current.getJSONArray("weeks");
       /* int weeks = current.getJSONArray("weeks").size(); */
+      boolean matches = searchName.length() > 0 && login.matches(".*" + searchName + ".*");
 
       rotate(rotationAngle);
+
       if (contributions >= minContributions) {
         // Actual drawing
         int alphaValue = 255;
@@ -329,27 +333,29 @@ void drawData(double maxSized) {
             alphaValue -= 1;
         }
 
-        fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
-        if (login.equals(searchName)) {
-          stroke(color(255,0,0));
-        } else {
-          stroke(0);
-        }
-        rect(-5, (int)maxSized / 2, 10, (int)(contributions * maxSized) - (int)maxSized / 2);
-        /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
-        /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
-        /* arc(0, 0, (int)(contributions * maxSized * 2), (int)(contributions * maxSized * 2), 0, t); */
-        pushMatrix();
+        pushStyle();
         {
-          translate(5, (int)(contributions * maxSized));
-          rotate(HALF_PI);
-          fill(colors[i]);
-          if (searchName.length() > 0 && login.matches(".*" + searchName + ".*")) {
-            fill(color(255,0,0));
+          fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
+          if (matches) {
+            stroke(color(255,0,0));
+          } else {
+            stroke(0);
           }
-          text(login, 3, 10);
+          rect(-5, (int)maxSized / 2, 10, (int)(contributions * maxSized) - (int)maxSized / 2);
+          pushMatrix();
+          {
+            translate(5, (int)(contributions * maxSized));
+            rotate(HALF_PI);
+            if (matches) {
+              fill(color(255,0,0));
+            } else {
+              fill(colors[i]);
+            }
+            text(login, 3, 10);
+          }
+          popMatrix();
         }
-        popMatrix();
+        popStyle();
       }
   }
 }

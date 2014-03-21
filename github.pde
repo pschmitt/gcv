@@ -323,12 +323,11 @@ void drawData(double maxSized) {
       String login = author.getString("login");
       int contributions = current.getInt("total");
       JSONArray weeksAr =  current.getJSONArray("weeks");
-      /* int weeks = current.getJSONArray("weeks").size(); */
       boolean matches = searchName.length() > 0 && login.matches(".*" + searchName + ".*");
 
       rotate(rotationAngle);
 
-      if (hideAllButMatching && !matches) {
+      if (hideAllButMatching && searchName.length() > 0 && !matches) {
         continue;
       }
 

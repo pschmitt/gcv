@@ -27,11 +27,11 @@ double zoomFactor = 1.0;
 boolean hideHelp = false;
 boolean randomize = true;
 boolean research = false;
+boolean hideAllButMatching = false;
 String searchName = "";
 
 int minContributions = 1;
 
-PFont normalFont;
 PFont titleFont;
 
 int lastMousePosX = -1;
@@ -195,6 +195,9 @@ void normalKeyPressed() {
     case 'h':
       hideHelp = !hideHelp;
       break;
+    case 'm':
+      hideAllButMatching = !hideAllButMatching;
+      break;
     case 'r':
       zoomFactor = 1.0;
       break;
@@ -325,6 +328,10 @@ void drawData(double maxSized) {
 
       rotate(rotationAngle);
 
+      if (hideAllButMatching && !matches) {
+        continue;
+      }
+
       if (contributions >= minContributions) {
         // Actual drawing
         int alphaValue = 255;
@@ -364,6 +371,7 @@ void drawKeyboardHelp() {
   String help = "h: Toggle help\n"
               + "s: Sort data (by contributions)\n"
               + "f: Search Name (ESC: quit, ENTER: validate)\n"
+              + "m: Toggle hide all but matching\n"
               + "LEFT: Decrease min. contrib\n"
               + "RIGHT: Increase min. contrib\n"
               + "PAGE_DOWN: Decrease min. contrib (-50)\n"
@@ -540,7 +548,7 @@ void setup() {
 
   // Default font settings
   titleFont = createFont("Sans", 40, true);
-  normalFont = createFont("Sans", 12, true);
+  PFont normalFont = createFont("Sans", 12, true);
   textFont(normalFont);
   smooth();
 

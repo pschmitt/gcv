@@ -243,11 +243,15 @@ void drawData(double maxSized) {
 
 void drawTransparencyExplanation() {
   fill(100);
+
   // Description
   int descTextHeight = 22;
   String desc = "Code regularity";
   text(desc, width / 2 - textWidth(desc) / 2, descTextHeight + 2);
 
+  text("Less", width / 4 - 10, descTextHeight + 2);
+
+  // Background
   rect(width / 4, 20 + descTextHeight, width / 2, 15);
 
   float step = (float)width / 2 / 255;

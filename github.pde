@@ -15,6 +15,8 @@ float rotationAngle;
 float customRotationAngle;
 double zoomFactor = 1.0;
 
+int minContributions = 1;
+
 PFont normalFont;
 PFont titleFont;
 
@@ -30,6 +32,7 @@ Properties loadCommandLine() {
   if (args.length > 1 && args[1] != null) {
     props.setProperty("token", args[1]);
   }
+
   return props;
 }
 
@@ -126,6 +129,34 @@ void keyPressed() {
       // rotationAngle -= 0.001;
       customRotationAngle -= 0.01;
       break;
+    case CODED:
+      println("Min Contributions:" + minContributions);
+      switch(keyCode) {
+        case LEFT:
+          if (minContributions > 0) {
+            minContributions--;
+          }
+          break;
+        case RIGHT:
+          if (minContributions < maxContributions) {
+            minContributions++;
+          }
+          break;
+        case 34: // PAGE_DOWN
+         if (minContributions - 50 > 0) {
+            minContributions -= 50;
+          }
+          break;
+        case 33: // PAGE_UP
+         if (minContributions + 50 < maxContributions) {
+            minContributions += 50;
+          }
+          break;
+        default:
+          println("Special key Pressed: " + keyCode);
+          break;
+      }
+      break;
     case 'q':
       exit();
       break;
@@ -183,32 +214,84 @@ void drawData(double maxSized) {
       /* int weeks = current.getJSONArray("weeks").size(); */
       JSONArray weeksAr =  current.getJSONArray("weeks");
 
-      // Actual drawing
-      int alphaValue = 255;
-      for (int j = 0; j < weeksAr.size(); ++j) {
-        if (weeksAr.getJSONObject(j).getInt("c") <= 0)
-          alphaValue -= 1;
-      }
-
-      fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
       rotate(rotationAngle);
-      rect(0, 0, 10, (int)(contributions * maxSized));
-      //noFill();
-      /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
-      /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
-      /* arc(0, 0, (int)(contributions * maxSized * 2), (int)(contributions * maxSized * 2), 0, t); */
-      pushMatrix();
-      {
-        translate(10, (int)(contributions * maxSized));
-        rotate(HALF_PI);
-        fill(colors[i]);
-        text(author.getString("login"), 3, 10);
+      if (contributions >= minContributions) {
+        // Actual drawing
+        int alphaValue = 255;
+        for (int j = 0; j < weeksAr.size(); ++j) {
+          if (weeksAr.getJSONObject(j).getInt("c") <= 0)
+            alphaValue -= 1;
+        }
+
+        fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
+        rect(0, 0, 10, (int)(contributions * maxSized));
+        //noFill();
+        /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
+        /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
+        /* arc(0, 0, (int)(contributions * maxSized * 2), (int)(contributions * maxSized * 2), 0, t); */
+        pushMatrix();
+        {
+          translate(10, (int)(contributions * maxSized));
+          rotate(HALF_PI);
+          fill(colors[i]);
+          text(author.getString("login"), 3, 10);
+        }
+        popMatrix();
       }
-      popMatrix();
   }
 }
 
-void drawGraduation(double maxSized) {
+void drawTransparencyExplanation() {
+  fill(100);
+  // Description
+  int descTextHeight = 22;
+  String desc = "Code regularity";
+  text(desc, width / 2 - textWidth(desc) / 2, descTextHeight + 2);
+
+  rect(width / 4, 20 + descTextHeight, width / 2, 15);
+
+  float step = (float)width / 2 / 255;
+  //println("Step: " + step);
+  noStroke();
+  for (int i = 0; i < 255; i++) {
+    fill(color(255, 0, 0, i));
+    // println("Draw rect at: " + (width / 4 + step * i) + "x" + (20 + descTextHeight));
+    rect(width / 4 + step * i, 20 + descTextHeight, step, 15);
+  }
+}
+
+void drawMinContributions() {
+  int diff = maxContributions - minContributions;
+  float step = (width / 2) / (float)maxContributions;
+  // println("diff: " + diff + " step: " + step);
+
+  fill(100);
+  // Description
+  String desc = "Min. contributions";
+  text(desc, width / 2 - textWidth(desc) / 2, height - 2);
+  // FIXME
+  // translate(0, height - 22);
+  int descTextHeight = 22;
+
+  // Background rect
+  stroke(100);
+  // Graduations
+  text("0", width / 4 - textWidth("0") - 10, height - 8 - descTextHeight);
+  text(Integer.toString(maxContributions), 3 * width / 4 + 10, height - 8 - descTextHeight);
+
+  rect(width / 4, height - 20 - descTextHeight, width / 2, 15);
+
+  // Fake slider
+  fill(0);
+  // Graduation
+  rect(width / 4, height - 20 - descTextHeight, (width / 2) - (diff * step), 15);
+  fill(100);
+  text(Integer.toString(minContributions), (3 * width / 4) - (diff * step) - textWidth(Integer.toString(minContributions)) / 2, height - 24 - descTextHeight);
+  // Reset
+  stroke(0);
+}
+
+void drawGraduations(double maxSized) {
   int[] graduations = new int[] { 1, 10, 25, 50, 100, 250, 500, 1000, 2000, 50000, 10000};
   for (int g : graduations) {
     if (g < maxContributions) {
@@ -221,24 +304,39 @@ void drawGraduation(double maxSized) {
   }
 }
 
-void draw() {
-  clear();
-  translate(width/2, height/2);
-
-  int maxSize = min(width/2, height/2) - 40;
-  double maxSized = ((double)maxSize / maxContributions) * zoomFactor;
-
-  // Draw background
-  fill(255);
+void drawBackgroundElipse(double maxSized) {
+  fill(color(22, 22, 22));
   ellipse(0, 0, (int)(maxContributions * maxSized * 2), (int)(maxContributions * maxSized * 2));
+}
 
-  drawGraduation(maxSized);
-
-  drawTitle(maxSized);
-  rotate(customRotationAngle);
-  drawData(maxSized);
+void drawCenter() {
   fill(37);
   ellipse(0, 0, 20, 20);
+}
+
+void draw() {
+  fill(20);
+  clear();
+  pushMatrix();
+  {
+    translate(width/2, height/2);
+
+    int maxSize = min(width/2, height/2) - 40;
+    double maxSized = ((double)maxSize / maxContributions) * zoomFactor;
+
+    // Draw background
+    drawBackgroundElipse(maxSized);
+
+    drawGraduations(maxSized);
+
+    drawTitle(maxSized);
+    rotate(customRotationAngle);
+    drawData(maxSized);
+    drawCenter();
+  }
+  popMatrix();
+  drawTransparencyExplanation();
+  drawMinContributions();
 }
 
 // vim: set ft=processing et ts=2 :

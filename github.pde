@@ -8,17 +8,28 @@ import java.util.GregorianCalendar;
 String repository;
 JSONArray json;
 color[] colors;
+
 int weeksSinceCreation;
 int maxContributions;
 float rotationAngle;
 float customRotationAngle;
+double zoomFactor = 1.0;
 
 PFont normalFont;
 PFont titleFont;
 
 Properties loadCommandLine() {
   Properties props = new Properties();
-  props.setProperty("repo", args[0]);
+  // Default to self
+  String r = "pschmitt/github-contributions-visualisation";
+  if (args[0] != null) {
+    r = args[0];
+  }
+  props.setProperty("repo", r);
+
+  if (args.length > 1 && args[1] != null) {
+    props.setProperty("token", args[1]);
+  }
   return props;
 }
 
@@ -28,6 +39,7 @@ void setup() {
     frame.setResizable(true);
   }
 
+  // Default font settings
   titleFont = createFont("Sans", 40, true);
   normalFont = createFont("Sans", 12, true);
   textFont(normalFont);
@@ -38,9 +50,10 @@ void setup() {
   // Get CLI parameters
   Properties props = loadCommandLine();
   repository = props.getProperty("repo", "No repository specified.");
+  String token = props.getProperty("token", null);
 
   String githubApi = "https://api.github.com/repos/" + repository;
-  JSONObject repoStats = loadJSONObject(githubApi);
+  JSONObject repoStats = loadJSONObject(token != null ? githubApi + "?access_token=" + token : githubApi);
 
   try {
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -57,7 +70,7 @@ void setup() {
     println("Couldn't parse date..");
   }
 
-  json = loadJSONArray(githubApi + "/stats/contributors");
+  json = loadJSONArray(token != null ? githubApi + "/stats/contributors?access_token=" + token : githubApi + "/stats/contributors");
 
   int contributors = json.size();
   rotationAngle = TWO_PI / contributors;
@@ -85,20 +98,22 @@ void setup() {
   }
   json = randomArray;
 
+  // Random colors
   colors = new color[json.size()];
   for (int i = 0; i < json.size(); ++i) {
     colors[i] = color((int)random(0, 255), (int)random(0, 255), (int)random(0, 255));
   }
 }
 
-double zoomFactor = 1.0;
-
 void mouseWheel(MouseEvent event) {
   float e = event.getAmount();
   zoomFactor += e * -0.5;
   if (zoomFactor < 1.0)
     zoomFactor = 1.0;
-  // println(e);
+  if (zoomFactor > 250)
+    zoomFactor = 250;
+  println(zoomFactor);
+
 }
 
 void keyPressed() {
@@ -120,18 +135,16 @@ void keyPressed() {
   }
 }
 
-void drawTitle(double maxSized) {
-  float r = (float)(maxContributions * maxSized);
+void drawTextAroundElipse(String msg, float r) {
   // We must keep track of our position along the curve
   float arclength = 0;
 
-  textFont(titleFont);
   // For every box
-  for (int i = 0; i < repository.length(); i++)
+  for (int i = 0; i < msg.length(); i++)
   {
     // Instead of a constant width, we check the width of each character.
     StringBuilder b = new StringBuilder();
-    char c = repository.charAt(i);
+    char c = msg.charAt(i);
     b.append(c);
     float w = textWidth(b.toString());
 
@@ -145,7 +158,7 @@ void drawTitle(double maxSized) {
     // Polar to cartesian coordinate conversion
     translate(r*cos(theta), r*sin(theta));
     // Rotate the box
-    rotate(theta+PI/2); // rotation is offset by 90 degrees
+    rotate(theta+HALF_PI); // rotation is offset by 90 degrees
     // Display the character
     fill(127);
     text(b.toString(),0,0);
@@ -153,7 +166,11 @@ void drawTitle(double maxSized) {
     // Move halfway again
     arclength += w/2;
   }
+}
 
+void drawTitle(double maxSized) {
+  textFont(titleFont);
+  drawTextAroundElipse(repository, (float )(maxContributions * maxSized));
   textFont(normalFont);
 }
 
@@ -170,7 +187,7 @@ void drawData(double maxSized) {
       int alphaValue = 255;
       for (int j = 0; j < weeksAr.size(); ++j) {
         if (weeksAr.getJSONObject(j).getInt("c") <= 0)
-          alphaValue -= 10;
+          alphaValue -= 1;
       }
 
       fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
@@ -191,6 +208,19 @@ void drawData(double maxSized) {
   }
 }
 
+void drawGraduation(double maxSized) {
+  int[] graduations = new int[] { 1, 10, 25, 50, 100, 250, 500, 1000, 2000, 50000, 10000};
+  for (int g : graduations) {
+    if (g < maxContributions) {
+      noFill();
+      stroke(100);
+      ellipse(0, 0, (int)(g * maxSized * 2), (int)(g * maxSized * 2));
+      drawTextAroundElipse(Integer.toString(g), (float)(g*maxSized));
+      stroke(0);
+    }
+  }
+}
+
 void draw() {
   clear();
   translate(width/2, height/2);
@@ -202,9 +232,13 @@ void draw() {
   fill(255);
   ellipse(0, 0, (int)(maxContributions * maxSized * 2), (int)(maxContributions * maxSized * 2));
 
+  drawGraduation(maxSized);
+
   drawTitle(maxSized);
   rotate(customRotationAngle);
   drawData(maxSized);
+  fill(37);
+  ellipse(0, 0, 20, 20);
 }
 
 // vim: set ft=processing et ts=2 :

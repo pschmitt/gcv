@@ -139,7 +139,6 @@ void randomColors() {
 /* {{{ Input functions */
 
 void mouseDragged(MouseEvent event) {
-  println("mouse: " + mouseY + " (" + (height - 59) + ")");
   boolean withinSlider = false;
   if (mouseX > width / 4 && mouseX < 3 * width / 4) {
     if (mouseY < height - 37 && mouseY > height - 59) {
@@ -162,7 +161,7 @@ void mouseDragged(MouseEvent event) {
     println("NOT within slider");
   }
 
-    lastMousePosX = mouseX;
+  lastMousePosX = mouseX;
 }
 
 void mouseWheel(MouseEvent event) {

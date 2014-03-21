@@ -7,6 +7,7 @@ import java.util.GregorianCalendar;
 
 String repository;
 JSONArray json;
+JSONArray origData;
 color[] colors;
 
 int weeksSinceCreation;
@@ -15,13 +16,14 @@ float rotationAngle;
 float customRotationAngle;
 double zoomFactor = 1.0;
 boolean hideHelp = false;
+boolean randomize = false;
 
 int minContributions = 1;
 
 PFont normalFont;
 PFont titleFont;
 
-private static final int MAX_ZOOM_FACTOR = 250;
+private static final int MAX_ZOOM_FACTOR = 350;
 
 Properties loadCommandLine() {
   Properties props = new Properties();
@@ -37,6 +39,33 @@ Properties loadCommandLine() {
   }
 
   return props;
+}
+
+void getData() {
+  json = new JSONArray();
+  for (int i = 0; i < origData.size(); ++i) {
+    json.append(origData.getJSONObject(i));
+  }
+
+  // Randomly reorganize the data
+  JSONArray randomArray = new JSONArray();
+
+  while (json.size() > 0) {
+    int randomIndex = (int)random(0, json.size());
+    JSONObject j = json.getJSONObject(randomIndex);
+
+    int contributions = j.getInt("total");
+    JSONObject author = j.getJSONObject("author");
+    String login = author.getString("login");
+
+    if (contributions > maxContributions) {
+      maxContributions = contributions;
+    }
+    randomArray.append(j);
+    json.remove(randomIndex);
+    println("Author " + login + " made "  + contributions + " contributions");
+  }
+  json = randomize ? randomArray : origData;
 }
 
 void setup() {
@@ -82,38 +111,20 @@ void setup() {
   }
 
   try {
-    json = loadJSONArray(token != null ? githubApi + "/stats/contributors?access_token=" + token : githubApi + "/stats/contributors");
+    origData = loadJSONArray(token != null ? githubApi + "/stats/contributors?access_token=" + token : githubApi + "/stats/contributors");
   } catch (Exception e) {
     println("Caught an exception, exiting.");
     e.printStackTrace();
     exit();
   }
 
-  int contributors = json.size();
+  int contributors = origData.size();
   rotationAngle = TWO_PI / contributors;
 
   println("# Contributors: " + contributors);
   println("rotationAngle: " + rotationAngle);
 
-  // Randomly reorganize the data
-  JSONArray randomArray = new JSONArray();
-
-  while (json.size() > 0) {
-    int randomIndex = (int)random(0, json.size());
-    JSONObject j = json.getJSONObject(randomIndex);
-
-    int contributions = j.getInt("total");
-    JSONObject author = j.getJSONObject("author");
-    String login = author.getString("login");
-
-    if (contributions > maxContributions) {
-      maxContributions = contributions;
-    }
-    randomArray.append(j);
-    json.remove(randomIndex);
-    println("Author " + login + " made "  + contributions + " contributions");
-  }
-  json = randomArray;
+  getData();
 
   // Random colors
   colors = new color[json.size()];
@@ -195,6 +206,10 @@ void keyPressed() {
     case 'r':
       zoomFactor = 1.0;
       break;
+    case 's':
+      randomize = !randomize;
+      getData();
+      break;
     case 'q':
     case 'Q':
       exit();
@@ -265,14 +280,14 @@ void drawData(double maxSized) {
         }
 
         fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
-        rect(0, (int)maxSized, 10, (int)(contributions * maxSized) - (int)maxSized);
+        rect(-5, (int)maxSized / 2, 10, (int)(contributions * maxSized) - (int)maxSized / 2);
         //noFill();
         /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
         /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
         /* arc(0, 0, (int)(contributions * maxSized * 2), (int)(contributions * maxSized * 2), 0, t); */
         pushMatrix();
         {
-          translate(10, (int)(contributions * maxSized));
+          translate(5, (int)(contributions * maxSized));
           rotate(HALF_PI);
           fill(colors[i]);
           text(author.getString("login"), 3, 10);
@@ -284,10 +299,11 @@ void drawData(double maxSized) {
 
 void drawKeyboardHelp() {
   String help = "h: Toggle help\n"
+              + "s: Sort data (by contributions)\n"
               + "LEFT: Decrease min. contrib\n"
               + "RIGHT: Increase min. contrib\n"
               + "PAGE_DOWN: Decrease min. contrib (-50)\n"
-              + "PAGE_up: Increas min. contrib (+50)\n"
+              + "PAGE_UP: Increas min. contrib (+50)\n"
               + "+: Rotate\n"
               + "-: Rotate (counter clockwise)\n"
               + "MOUSE_WHELL: Zoom\n"

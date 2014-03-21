@@ -14,11 +14,14 @@ int maxContributions;
 float rotationAngle;
 float customRotationAngle;
 double zoomFactor = 1.0;
+boolean hideHelp = false;
 
 int minContributions = 1;
 
 PFont normalFont;
 PFont titleFont;
+
+private static final int MAX_ZOOM_FACTOR = 250;
 
 Properties loadCommandLine() {
   Properties props = new Properties();
@@ -46,9 +49,7 @@ void setup() {
   titleFont = createFont("Sans", 40, true);
   normalFont = createFont("Sans", 12, true);
   textFont(normalFont);
-
   smooth();
-
 
   // Get CLI parameters
   Properties props = loadCommandLine();
@@ -56,7 +57,14 @@ void setup() {
   String token = props.getProperty("token", null);
 
   String githubApi = "https://api.github.com/repos/" + repository;
-  JSONObject repoStats = loadJSONObject(token != null ? githubApi + "?access_token=" + token : githubApi);
+  JSONObject repoStats = null;
+  try {
+    repoStats = loadJSONObject(token != null ? githubApi + "?access_token=" + token : githubApi);
+  } catch (Exception e) {
+    println("Caught an exception, exiting.");
+    e.printStackTrace();
+    exit();
+  }
 
   try {
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -73,7 +81,13 @@ void setup() {
     println("Couldn't parse date..");
   }
 
-  json = loadJSONArray(token != null ? githubApi + "/stats/contributors?access_token=" + token : githubApi + "/stats/contributors");
+  try {
+    json = loadJSONArray(token != null ? githubApi + "/stats/contributors?access_token=" + token : githubApi + "/stats/contributors");
+  } catch (Exception e) {
+    println("Caught an exception, exiting.");
+    e.printStackTrace();
+    exit();
+  }
 
   int contributors = json.size();
   rotationAngle = TWO_PI / contributors;
@@ -113,8 +127,8 @@ void mouseWheel(MouseEvent event) {
   zoomFactor += e * -0.5;
   if (zoomFactor < 1.0)
     zoomFactor = 1.0;
-  if (zoomFactor > 250)
-    zoomFactor = 250;
+  if (zoomFactor > MAX_ZOOM_FACTOR)
+    zoomFactor = MAX_ZOOM_FACTOR;
   println(zoomFactor);
 
 }
@@ -129,6 +143,9 @@ void keyPressed() {
       // rotationAngle -= 0.001;
       customRotationAngle -= 0.01;
       break;
+    case 'h':
+      hideHelp = !hideHelp;
+      break;
     case CODED:
       println("Min Contributions:" + minContributions);
       switch(keyCode) {
@@ -142,14 +159,32 @@ void keyPressed() {
             minContributions++;
           }
           break;
+        case UP:
+          if (zoomFactor + 20.0 < MAX_ZOOM_FACTOR) {
+            zoomFactor += 20.0;
+          } else {
+            zoomFactor = MAX_ZOOM_FACTOR;
+          }
+          break;
+        case DOWN:
+          if (zoomFactor - 20.0 > 1.0) {
+            zoomFactor -= 20.0;
+          } else {
+            zoomFactor = 1.0;
+          }
+          break;
         case 34: // PAGE_DOWN
-         if (minContributions - 50 > 0) {
+          if (minContributions - 50 > 0) {
             minContributions -= 50;
+          } else {
+            minContributions = 0;
           }
           break;
         case 33: // PAGE_UP
          if (minContributions + 50 < maxContributions) {
             minContributions += 50;
+          } else {
+            minContributions = maxContributions;
           }
           break;
         default:
@@ -157,7 +192,11 @@ void keyPressed() {
           break;
       }
       break;
+    case 'r':
+      zoomFactor = 1.0;
+      break;
     case 'q':
+    case 'Q':
       exit();
       break;
     default:
@@ -186,13 +225,15 @@ void drawTextAroundElipse(String msg, float r) {
     float theta = PI + arclength / r;
 
     pushMatrix();
-    // Polar to cartesian coordinate conversion
-    translate(r*cos(theta), r*sin(theta));
-    // Rotate the box
-    rotate(theta+HALF_PI); // rotation is offset by 90 degrees
-    // Display the character
-    fill(127);
-    text(b.toString(),0,0);
+    {
+      // Polar to cartesian coordinate conversion
+      translate(r*cos(theta), r*sin(theta));
+      // Rotate the box
+      rotate(theta+HALF_PI); // rotation is offset by 90 degrees
+      // Display the character
+      fill(127);
+      text(b.toString(),0,0);
+    }
     popMatrix();
     // Move halfway again
     arclength += w/2;
@@ -224,7 +265,7 @@ void drawData(double maxSized) {
         }
 
         fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
-        rect(0, 0, 10, (int)(contributions * maxSized));
+        rect(0, (int)maxSized, 10, (int)(contributions * maxSized));
         //noFill();
         /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
         /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
@@ -241,6 +282,36 @@ void drawData(double maxSized) {
   }
 }
 
+void drawKeyboardHelp() {
+  String help = "h: Toggle help\n"
+              + "LEFT: Decrease min. contrib\n"
+              + "RIGHT: Increase min. contrib\n"
+              + "PAGE_DOWN: Decrease min. contrib (-50)\n"
+              + "PAGE_up: Increas min. contrib (+50)\n"
+              + "+: Rotate\n"
+              + "-: Rotate (counter clockwise)\n"
+              + "MOUSE_WHELL: Zoom\n"
+              + "r: Reset zoom\n"
+              + "q: Quit";
+  fill(255);
+  text(help, width - textWidth(help), height / 2);
+}
+
+void drawBarExplanation() {
+  pushMatrix();
+  {
+    fill(100);
+    rect(50, 100, 15, height - 140);
+    translate(50, 100);
+    rotate(-HALF_PI);
+    text("Username", 8, 12);
+  }
+  popMatrix();
+  for (int i = 0; i <= 100; i += 10) {
+    text(Integer.toString(i), 75, height - 40 - (10 * i));
+  }
+}
+
 void drawTransparencyExplanation() {
   fill(100);
 
@@ -249,9 +320,11 @@ void drawTransparencyExplanation() {
   String desc = "Code regularity";
   text(desc, width / 2 - textWidth(desc) / 2, descTextHeight + 2);
 
-  text("Less", width / 4 - 10, descTextHeight + 2);
+  text("Less", width / 4 - textWidth("Less") - 10, 16 + descTextHeight + 15);
+  text("More", 3 * width / 4 + 10, 16 + descTextHeight + 15);
 
   // Background
+  noFill();
   rect(width / 4, 20 + descTextHeight, width / 2, 15);
 
   float step = (float)width / 2 / 255;
@@ -313,9 +386,10 @@ void drawBackgroundElipse(double maxSized) {
   ellipse(0, 0, (int)(maxContributions * maxSized * 2), (int)(maxContributions * maxSized * 2));
 }
 
-void drawCenter() {
-  fill(37);
-  ellipse(0, 0, 20, 20);
+void drawCenter(double maxSized) {
+  fill(0);
+  noStroke();
+  ellipse(0, 0, (int)maxSized, (int)maxSized);
 }
 
 void draw() {
@@ -336,11 +410,15 @@ void draw() {
     drawTitle(maxSized);
     rotate(customRotationAngle);
     drawData(maxSized);
-    drawCenter();
+    drawCenter(maxSized);
   }
   popMatrix();
-  drawTransparencyExplanation();
-  drawMinContributions();
+  if (!hideHelp) {
+    drawKeyboardHelp();
+    drawBarExplanation();
+    drawTransparencyExplanation();
+    drawMinContributions();
+  }
 }
 
 // vim: set ft=processing et ts=2 :

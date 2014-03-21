@@ -34,6 +34,7 @@ PFont titleFont;
 
 int lastMousePosX = -1;
 
+/* {{{ CLI options */
 Properties loadCommandLine() {
   Properties props = new Properties();
   // Default to self
@@ -49,6 +50,10 @@ Properties loadCommandLine() {
 
   return props;
 }
+
+/* }}} End of CLI options */
+
+/* {{{ Data related functions */
 
 void getData() {
   currentDataSet = new JSONArray();
@@ -130,28 +135,9 @@ void randomColors() {
   }
 }
 
-void setup() {
-  size(400, 400);
-  if (frame != null) {
-    frame.setResizable(true);
-  }
+/* }}} End of data related functions */
 
-  // Default font settings
-  titleFont = createFont("Sans", 40, true);
-  normalFont = createFont("Sans", 12, true);
-  textFont(normalFont);
-  smooth();
-
-  // Get CLI parameters
-  Properties props = loadCommandLine();
-  repository = props.getProperty("repo", "No repository specified.");
-  String token = props.getProperty("token", null);
-
-  getRepoStats(token);
-  getContributorStats(token);
-  getData();
-  randomColors();
-}
+/* {{{ Input functions */
 
 void mouseDragged(MouseEvent event) {
   println("Mouse dragged: " + mouseX + "x" + mouseY);
@@ -246,6 +232,10 @@ void keyPressed() {
   }
 }
 
+/* }}} End of input functions */
+
+/* {{{ Drawing functions */
+
 void drawTextAroundElipse(String msg, float r) {
   // We must keep track of our position along the curve
   float arclength = 0;
@@ -282,9 +272,12 @@ void drawTextAroundElipse(String msg, float r) {
 }
 
 void drawTitle(double maxSized) {
-  textFont(titleFont);
-  drawTextAroundElipse(repository, (float )(maxContributions * maxSized));
-  textFont(normalFont);
+  pushStyle();
+  {
+    textFont(titleFont);
+    drawTextAroundElipse(repository, (float )(maxContributions * maxSized));
+  }
+  popStyle();
 }
 
 void drawData(double maxSized) {
@@ -354,28 +347,32 @@ void drawBarExplanation() {
 }
 
 void drawTransparencyExplanation() {
-  fill(100);
+  pushStyle();
+  {
+    fill(100);
 
-  // Description
-  int descTextHeight = 22;
-  String desc = "Code regularity";
-  text(desc, width / 2 - textWidth(desc) / 2, descTextHeight + 2);
+    // Description
+    int descTextHeight = 22;
+    String desc = "Code regularity";
+    text(desc, width / 2 - textWidth(desc) / 2, descTextHeight + 2);
 
-  text("Less", width / 4 - textWidth("Less") - 10, 16 + descTextHeight + 15);
-  text("More", 3 * width / 4 + 10, 16 + descTextHeight + 15);
+    text("Less", width / 4 - textWidth("Less") - 10, 16 + descTextHeight + 15);
+    text("More", 3 * width / 4 + 10, 16 + descTextHeight + 15);
 
-  // Background
-  noFill();
-  rect(width / 4, 20 + descTextHeight, width / 2, 15);
+    // Background
+    noFill();
+    rect(width / 4, 20 + descTextHeight, width / 2, 15);
 
-  float step = (float)width / 2 / 255;
-  //println("Step: " + step);
-  noStroke();
-  for (int i = 0; i < 255; i++) {
-    fill(color(255, 0, 0, i));
-    // println("Draw rect at: " + (width / 4 + step * i) + "x" + (20 + descTextHeight));
-    rect(width / 4 + step * i, 20 + descTextHeight, step, 15);
+    float step = (float)width / 2 / 255;
+    //println("Step: " + step);
+    noStroke();
+    for (int i = 0; i < 255; i++) {
+      fill(color(255, 0, 0, i));
+      // println("Draw rect at: " + (width / 4 + step * i) + "x" + (20 + descTextHeight));
+      rect(width / 4 + step * i, 20 + descTextHeight, step, 15);
+    }
   }
+  popStyle();
 }
 
 void drawMinContributions() {
@@ -383,32 +380,35 @@ void drawMinContributions() {
   float step = (width / 2) / (float)maxContributions;
   // println("diff: " + diff + " step: " + step);
 
-  fill(100);
-  // Description
-  String desc = "Min. contributions";
-  text(desc, width / 2 - textWidth(desc) / 2, height - 2);
-  // FIXME
-  // translate(0, height - 22);
-  int descTextHeight = 22;
+  pushStyle();
+  {
+    fill(100);
+    // Description
+    String desc = "Min. contributions";
+    text(desc, width / 2 - textWidth(desc) / 2, height - 2);
+    // FIXME
+    // translate(0, height - 22);
+    int descTextHeight = 22;
 
-  // Background rect
-  stroke(100);
-  // Graduations
-  text("0", width / 4 - textWidth("0") - 10, height - 8 - descTextHeight);
-  text(Integer.toString(maxContributions), 3 * width / 4 + 10, height - 8 - descTextHeight);
+    // Background rect
+    stroke(100);
+    // Graduations
+    text("0", width / 4 - textWidth("0") - 10, height - 8 - descTextHeight);
+    text(Integer.toString(maxContributions), 3 * width / 4 + 10, height - 8 - descTextHeight);
 
-  rect(width / 4, height - 20 - descTextHeight, width / 2, 15);
+    rect(width / 4, height - 20 - descTextHeight, width / 2, 15);
 
-  // Fake slider
-  fill(0);
-  // Graduation
-  rect(width / 4, height - 20 - descTextHeight, (width / 2) - (diff * step), 15);
-  fill(100);
-  text(Integer.toString(minContributions),
-       (3 * width / 4) - (diff * step) - textWidth(Integer.toString(minContributions)) / 2,
-       height - 24 - descTextHeight);
+    // Fake slider
+    fill(0);
+    // Graduation
+    rect(width / 4, height - 20 - descTextHeight, (width / 2) - (diff * step), 15);
+    fill(100);
+    text(Integer.toString(minContributions),
+         (3 * width / 4) - (diff * step) - textWidth(Integer.toString(minContributions)) / 2,
+         height - 24 - descTextHeight);
+  }
   // Reset
-  stroke(0);
+  popStyle();
 }
 
 void drawGraduations(double maxSized) {
@@ -416,10 +416,13 @@ void drawGraduations(double maxSized) {
   for (int g : graduations) {
     if (g < maxContributions) {
       noFill();
-      stroke(100);
-      ellipse(0, 0, (int)(g * maxSized * 2), (int)(g * maxSized * 2));
-      drawTextAroundElipse(Integer.toString(g), (float)(g*maxSized));
-      stroke(0);
+      pushStyle();
+      {
+        stroke(100);
+        ellipse(0, 0, (int)(g * maxSized * 2), (int)(g * maxSized * 2));
+        drawTextAroundElipse(Integer.toString(g), (float)(g*maxSized));
+      }
+      popStyle();
     }
   }
 }
@@ -430,10 +433,16 @@ void drawBackgroundElipse(double maxSized) {
 }
 
 void drawCenter(double maxSized) {
-  fill(0);
-  noStroke();
-  ellipse(0, 0, (int)maxSized, (int)maxSized);
+  pushStyle();
+  {
+    fill(0);
+    noStroke();
+    ellipse(0, 0, (int)maxSized, (int)maxSized);
+  }
+  popStyle();
 }
+
+/* }}} End of drawing functions */
 
 void draw() {
   fill(20);
@@ -462,6 +471,29 @@ void draw() {
     drawTransparencyExplanation();
     drawMinContributions();
   }
+}
+
+void setup() {
+  size(400, 400);
+  if (frame != null) {
+    frame.setResizable(true);
+  }
+
+  // Default font settings
+  titleFont = createFont("Sans", 40, true);
+  normalFont = createFont("Sans", 12, true);
+  textFont(normalFont);
+  smooth();
+
+  // Get CLI parameters
+  Properties props = loadCommandLine();
+  repository = props.getProperty("repo", "No repository specified.");
+  String token = props.getProperty("token", null);
+
+  getRepoStats(token);
+  getContributorStats(token);
+  getData();
+  randomColors();
 }
 
 // vim: set ft=processing et ts=2 :

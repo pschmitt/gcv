@@ -139,11 +139,10 @@ void randomColors() {
 /* {{{ Input functions */
 
 void mouseDragged(MouseEvent event) {
-  println("Mouse dragged: " + mouseX + "x" + mouseY);
   if (lastMousePosX < mouseX) {
-    customRotationAngle -= 0.005;
+    customRotationAngle -= 0.01;
   } else {
-    customRotationAngle += 0.005;
+    customRotationAngle += 0.01;
   }
   lastMousePosX = mouseX;
 }
@@ -233,6 +232,12 @@ void normalKeyPressed() {
           } else {
             zoomFactor = 1.0;
           }
+          break;
+        case 36: // HOME
+          minContributions = 0;
+          break;
+        case 35: // END
+          minContributions = maxContributions;
           break;
         case 34: // PAGE_DOWN
           if (minContributions - MIN_CONTRIB_STEP_BIG > 0) {

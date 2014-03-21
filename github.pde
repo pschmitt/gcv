@@ -5,8 +5,17 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.GregorianCalendar;
 
+private static final String DEFAULT_REPO = "pschmitt/github-contributions-visualisation";
+private static final String GITHUB_API_PREFIX = "https://api.github.com/repos/";
+
+private static final float CUSTOM_ROTATION_STEP = 0.01;
+private static final float ZOOM_FACTOR_STEP = 0.5;
+private static final float ZOOM_FACTOR_STEP_BIG = 20.0;
+private static final int   MAX_ZOOM_FACTOR = 350;
+private static final int   MIN_CONTRIB_STEP_BIG = 50;
+
 String repository;
-JSONArray json;
+JSONArray currentDataSet;
 JSONArray origData;
 color[] colors;
 
@@ -23,12 +32,12 @@ int minContributions = 1;
 PFont normalFont;
 PFont titleFont;
 
-private static final int MAX_ZOOM_FACTOR = 350;
+int lastMousePosX = -1;
 
 Properties loadCommandLine() {
   Properties props = new Properties();
   // Default to self
-  String r = "pschmitt/github-contributions-visualisation";
+  String r = DEFAULT_REPO;
   if (args.length > 0 && args[0] != null) {
     r = args[0];
   }
@@ -42,17 +51,18 @@ Properties loadCommandLine() {
 }
 
 void getData() {
-  json = new JSONArray();
+  currentDataSet = new JSONArray();
+  // Clone array
   for (int i = 0; i < origData.size(); ++i) {
-    json.append(origData.getJSONObject(i));
+    currentDataSet.append(origData.getJSONObject(i));
   }
 
   // Randomly reorganize the data
   JSONArray randomArray = new JSONArray();
 
-  while (json.size() > 0) {
-    int randomIndex = (int)random(0, json.size());
-    JSONObject j = json.getJSONObject(randomIndex);
+  while (currentDataSet.size() > 0) {
+    int randomIndex = (int)random(0, currentDataSet.size());
+    JSONObject j = currentDataSet.getJSONObject(randomIndex);
 
     int contributions = j.getInt("total");
     JSONObject author = j.getJSONObject("author");
@@ -62,10 +72,62 @@ void getData() {
       maxContributions = contributions;
     }
     randomArray.append(j);
-    json.remove(randomIndex);
+    currentDataSet.remove(randomIndex);
     println("Author " + login + " made "  + contributions + " contributions");
   }
-  json = randomize ? randomArray : origData;
+  currentDataSet = randomize ? randomArray : origData;
+}
+
+void getRepoStats(String token) {
+  try {
+    String url = GITHUB_API_PREFIX + repository
+                 + (token != null ? "?access_token=" + token : "");
+    println("Stats URL: " + url);
+JSONObject repoStats = loadJSONObject(url);
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    Date d = df.parse(repoStats.getString("created_at"));
+    Date n = new Date();
+
+    long now = n.getTime();
+    long then = d.getTime();
+
+    weeksSinceCreation = (int)Math.abs((now - then) / (1000 * 60 * 60 * 24 * 7));
+
+    println("Created at: " + d);
+  } catch (ParseException e) {
+    println("Couldn't parse date..");
+  } catch (Exception e) {
+      println("Caught an exception, exiting.");
+      e.printStackTrace();
+      exit();
+  }
+}
+
+void getContributorStats(String token) {
+  try {
+    String url = GITHUB_API_PREFIX + repository + "/stats/contributors"
+                 + (token != null ? "?access_token=" + token : "");
+    println("Contributors URL: " + url);
+    origData = loadJSONArray(url);
+  } catch (Exception e) {
+    println("Caught an exception, exiting.");
+    e.printStackTrace();
+    exit();
+  }
+
+  int contributors = origData.size();
+  rotationAngle = TWO_PI / contributors;
+
+  println("# Contributors: " + contributors);
+  println("rotationAngle: " + rotationAngle);
+}
+
+void randomColors() {
+  // Random colors
+  colors = new color[currentDataSet.size()];
+  for (int i = 0; i < currentDataSet.size(); ++i) {
+    colors[i] = color((int)random(0, 255), (int)random(0, 255), (int)random(0, 255));
+  }
 }
 
 void setup() {
@@ -85,74 +147,38 @@ void setup() {
   repository = props.getProperty("repo", "No repository specified.");
   String token = props.getProperty("token", null);
 
-  String githubApi = "https://api.github.com/repos/" + repository;
-  JSONObject repoStats = null;
-  try {
-    repoStats = loadJSONObject(token != null ? githubApi + "?access_token=" + token : githubApi);
-  } catch (Exception e) {
-    println("Caught an exception, exiting.");
-    e.printStackTrace();
-    exit();
-  }
-
-  try {
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-    Date d = df.parse(repoStats.getString("created_at"));
-    Date n = new Date();
-
-    long now = n.getTime();
-    long then = d.getTime();
-
-    weeksSinceCreation = (int)Math.abs((now-then)/(1000*60*60*24*7));
-
-    println("Created at: " + d);
-  } catch (ParseException e) {
-    println("Couldn't parse date..");
-  }
-
-  try {
-    origData = loadJSONArray(token != null ? githubApi + "/stats/contributors?access_token=" + token : githubApi + "/stats/contributors");
-  } catch (Exception e) {
-    println("Caught an exception, exiting.");
-    e.printStackTrace();
-    exit();
-  }
-
-  int contributors = origData.size();
-  rotationAngle = TWO_PI / contributors;
-
-  println("# Contributors: " + contributors);
-  println("rotationAngle: " + rotationAngle);
-
+  getRepoStats(token);
+  getContributorStats(token);
   getData();
+  randomColors();
+}
 
-  // Random colors
-  colors = new color[json.size()];
-  for (int i = 0; i < json.size(); ++i) {
-    colors[i] = color((int)random(0, 255), (int)random(0, 255), (int)random(0, 255));
+void mouseDragged(MouseEvent event) {
+  println("Mouse dragged: " + mouseX + "x" + mouseY);
+  if (lastMousePosX < mouseX) {
+    customRotationAngle -= 0.005;
+  } else {
+    customRotationAngle += 0.005;
   }
+  lastMousePosX = mouseX;
 }
 
 void mouseWheel(MouseEvent event) {
   float e = event.getAmount();
-  zoomFactor += e * -0.5;
+  zoomFactor += e * - ZOOM_FACTOR_STEP;
   if (zoomFactor < 1.0)
     zoomFactor = 1.0;
   if (zoomFactor > MAX_ZOOM_FACTOR)
     zoomFactor = MAX_ZOOM_FACTOR;
-  println(zoomFactor);
-
 }
 
 void keyPressed() {
   switch (key) {
     case '+':
-      // rotationAngle += 0.001;
-      customRotationAngle += 0.01;
+      customRotationAngle += CUSTOM_ROTATION_STEP;
       break;
     case '-':
-      // rotationAngle -= 0.001;
-      customRotationAngle -= 0.01;
+      customRotationAngle -= CUSTOM_ROTATION_STEP;
       break;
     case 'h':
       hideHelp = !hideHelp;
@@ -171,35 +197,35 @@ void keyPressed() {
           }
           break;
         case UP:
-          if (zoomFactor + 20.0 < MAX_ZOOM_FACTOR) {
-            zoomFactor += 20.0;
+          if (zoomFactor + ZOOM_FACTOR_STEP < MAX_ZOOM_FACTOR) {
+            zoomFactor += ZOOM_FACTOR_STEP_BIG;
           } else {
             zoomFactor = MAX_ZOOM_FACTOR;
           }
           break;
         case DOWN:
-          if (zoomFactor - 20.0 > 1.0) {
-            zoomFactor -= 20.0;
+          if (zoomFactor - ZOOM_FACTOR_STEP > 1.0) {
+            zoomFactor -= ZOOM_FACTOR_STEP_BIG;
           } else {
             zoomFactor = 1.0;
           }
           break;
         case 34: // PAGE_DOWN
-          if (minContributions - 50 > 0) {
-            minContributions -= 50;
+          if (minContributions - MIN_CONTRIB_STEP_BIG > 0) {
+            minContributions -= MIN_CONTRIB_STEP_BIG;
           } else {
             minContributions = 0;
           }
           break;
         case 33: // PAGE_UP
-         if (minContributions + 50 < maxContributions) {
-            minContributions += 50;
+         if (minContributions + MIN_CONTRIB_STEP_BIG < maxContributions) {
+            minContributions += MIN_CONTRIB_STEP_BIG;
           } else {
             minContributions = maxContributions;
           }
           break;
         default:
-          println("Special key Pressed: " + keyCode);
+          println("Special key pressed: " + keyCode);
           break;
       }
       break;
@@ -262,13 +288,13 @@ void drawTitle(double maxSized) {
 }
 
 void drawData(double maxSized) {
-  for (int i = 0; i < json.size(); i++) {
-      JSONObject current = json.getJSONObject(i);
+  for (int i = 0; i < currentDataSet.size(); i++) {
+      JSONObject current = currentDataSet.getJSONObject(i);
       JSONObject author = current.getJSONObject("author");
       String login = author.getString("login");
       int contributions = current.getInt("total");
-      /* int weeks = current.getJSONArray("weeks").size(); */
       JSONArray weeksAr =  current.getJSONArray("weeks");
+      /* int weeks = current.getJSONArray("weeks").size(); */
 
       rotate(rotationAngle);
       if (contributions >= minContributions) {
@@ -281,7 +307,6 @@ void drawData(double maxSized) {
 
         fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
         rect(-5, (int)maxSized / 2, 10, (int)(contributions * maxSized) - (int)maxSized / 2);
-        //noFill();
         /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
         /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
         /* arc(0, 0, (int)(contributions * maxSized * 2), (int)(contributions * maxSized * 2), 0, t); */
@@ -290,7 +315,7 @@ void drawData(double maxSized) {
           translate(5, (int)(contributions * maxSized));
           rotate(HALF_PI);
           fill(colors[i]);
-          text(author.getString("login"), 3, 10);
+          text(login, 3, 10);
         }
         popMatrix();
       }
@@ -379,7 +404,9 @@ void drawMinContributions() {
   // Graduation
   rect(width / 4, height - 20 - descTextHeight, (width / 2) - (diff * step), 15);
   fill(100);
-  text(Integer.toString(minContributions), (3 * width / 4) - (diff * step) - textWidth(Integer.toString(minContributions)) / 2, height - 24 - descTextHeight);
+  text(Integer.toString(minContributions),
+       (3 * width / 4) - (diff * step) - textWidth(Integer.toString(minContributions)) / 2,
+       height - 24 - descTextHeight);
   // Reset
   stroke(0);
 }

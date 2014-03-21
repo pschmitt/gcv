@@ -25,7 +25,9 @@ float rotationAngle;
 float customRotationAngle;
 double zoomFactor = 1.0;
 boolean hideHelp = false;
-boolean randomize = false;
+boolean randomize = true;
+boolean research = false;
+String searchName = "";
 
 int minContributions = 1;
 
@@ -158,78 +160,108 @@ void mouseWheel(MouseEvent event) {
     zoomFactor = MAX_ZOOM_FACTOR;
 }
 
-void keyPressed() {
+void searchKeyPressed()
+{
   switch (key) {
-    case '+':
-      customRotationAngle += CUSTOM_ROTATION_STEP;
-      break;
-    case '-':
-      customRotationAngle -= CUSTOM_ROTATION_STEP;
-      break;
-    case 'h':
-      hideHelp = !hideHelp;
-      break;
-    case CODED:
-      println("Min Contributions:" + minContributions);
-      switch(keyCode) {
-        case LEFT:
-          if (minContributions > 0) {
-            minContributions--;
+      case ESC:
+        key = 0; //idem
+        searchName = "";
+      case ENTER:
+        research = false;      
+        break;
+      case BACKSPACE:
+        if (searchName.length() > 0) {
+                searchName = searchName.substring(0, searchName.length()-1);
+          }
+        break;
+      default:
+        searchName += key;
+  }
+}
+
+void normalKeyPressed()
+{
+  switch (key) {
+        case 'f':
+          research = !research;
+        case '+':
+         customRotationAngle += CUSTOM_ROTATION_STEP;
+          break;
+        case '-':
+          customRotationAngle -= CUSTOM_ROTATION_STEP;
+          break;
+        case 'h':
+          hideHelp = !hideHelp;
+          break;
+        case CODED:
+          println("Min Contributions:" + minContributions);
+          switch(keyCode) {
+            case LEFT:
+              if (minContributions > 0) {
+                minContributions--;
+              }
+              break;
+            case RIGHT:
+              if (minContributions < maxContributions) {
+                minContributions++;
+              }
+              break;
+            case UP:
+              if (zoomFactor + 20.0 < MAX_ZOOM_FACTOR) {
+                zoomFactor += 20.0;
+              } else {
+                zoomFactor = MAX_ZOOM_FACTOR;
+              }
+              break;
+            case DOWN:
+              if (zoomFactor - 20.0 > 1.0) {
+                zoomFactor -= 20.0;
+              } else {
+                zoomFactor = 1.0;
+              }
+              break;
+            case 34: // PAGE_DOWN
+              if (minContributions - 50 > 0) {
+                minContributions -= 50;
+              } else {
+                minContributions = 0;
+              }
+              break;
+            case 33: // PAGE_UP
+             if (minContributions + 50 < maxContributions) {
+                minContributions += 50;
+              } else {
+                minContributions = maxContributions;
+              }
+              break;
+            default:
+              println("Special key Pressed: " + keyCode);
+              break;
           }
           break;
-        case RIGHT:
-          if (minContributions < maxContributions) {
-            minContributions++;
-          }
+        case 'r':
+          zoomFactor = 1.0;
           break;
-        case UP:
-          if (zoomFactor + ZOOM_FACTOR_STEP < MAX_ZOOM_FACTOR) {
-            zoomFactor += ZOOM_FACTOR_STEP_BIG;
-          } else {
-            zoomFactor = MAX_ZOOM_FACTOR;
-          }
+        case 's':
+          randomize = !randomize;
+          getData();
           break;
-        case DOWN:
-          if (zoomFactor - ZOOM_FACTOR_STEP > 1.0) {
-            zoomFactor -= ZOOM_FACTOR_STEP_BIG;
-          } else {
-            zoomFactor = 1.0;
-          }
-          break;
-        case 34: // PAGE_DOWN
-          if (minContributions - MIN_CONTRIB_STEP_BIG > 0) {
-            minContributions -= MIN_CONTRIB_STEP_BIG;
-          } else {
-            minContributions = 0;
-          }
-          break;
-        case 33: // PAGE_UP
-         if (minContributions + MIN_CONTRIB_STEP_BIG < maxContributions) {
-            minContributions += MIN_CONTRIB_STEP_BIG;
-          } else {
-            minContributions = maxContributions;
-          }
+        case 'q':
+        case 'Q':
+          key = ESC; //ask to Papplet to exit
           break;
         default:
-          println("Special key pressed: " + keyCode);
+          println("Pressed: " + key);
           break;
       }
-      break;
-    case 'r':
-      zoomFactor = 1.0;
-      break;
-    case 's':
-      randomize = !randomize;
-      getData();
-      break;
-    case 'q':
-    case 'Q':
-      exit();
-      break;
-    default:
-      println("Pressed: " + key);
-      break;
+}
+void keyPressed() {
+  if(research){
+      searchKeyPressed();
   }
+  else{
+      normalKeyPressed();
+    }
 }
 
 /* }}} End of input functions */
@@ -299,6 +331,14 @@ void drawData(double maxSized) {
         }
 
         fill(color(red(colors[i]), green(colors[i]), blue(colors[i]), alphaValue));
+        if(login.equals(searchName))
+        {
+          stroke(color(255,0,0));
+        }
+        else
+        {
+          stroke(0);
+        }        
         rect(-5, (int)maxSized / 2, 10, (int)(contributions * maxSized) - (int)maxSized / 2);
         /* float t = (TWO_PI / weeksSinceCreation) * weeks; */
         /* println("weeks: "  + weeks + (TWO_PI / weeksSinceCreation) + " - " +  t); */
@@ -308,6 +348,10 @@ void drawData(double maxSized) {
           translate(5, (int)(contributions * maxSized));
           rotate(HALF_PI);
           fill(colors[i]);
+          if(login.equals(searchName))
+          {
+            fill(color(255,0,0));
+          }
           text(login, 3, 10);
         }
         popMatrix();
@@ -318,6 +362,7 @@ void drawData(double maxSized) {
 void drawKeyboardHelp() {
   String help = "h: Toggle help\n"
               + "s: Sort data (by contributions)\n"
+              + "f: Search Name (ESC for quit and ENTER for validate)\n"  
               + "LEFT: Decrease min. contrib\n"
               + "RIGHT: Increase min. contrib\n"
               + "PAGE_DOWN: Decrease min. contrib (-50)\n"
@@ -375,6 +420,11 @@ void drawTransparencyExplanation() {
   popStyle();
 }
 
+void drawResearch()
+{
+  fill(100);
+  text("Reseach : "+searchName, 100 , height - 40);
+}
 void drawMinContributions() {
   int diff = maxContributions - minContributions;
   float step = (width / 2) / (float)maxContributions;
@@ -465,6 +515,10 @@ void draw() {
     drawCenter(maxSized);
   }
   popMatrix();
+  if (research)
+  {
+    drawResearch(); 
+  }
   if (!hideHelp) {
     drawKeyboardHelp();
     drawBarExplanation();

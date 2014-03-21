@@ -139,12 +139,30 @@ void randomColors() {
 /* {{{ Input functions */
 
 void mouseDragged(MouseEvent event) {
-  if (lastMousePosX < mouseX) {
-    customRotationAngle -= 0.01;
-  } else {
-    customRotationAngle += 0.01;
+  println("mouse: " + mouseY + " (" + (height - 59) + ")");
+  boolean withinSlider = false;
+  if (mouseX > width / 4 && mouseX < 3 * width / 4) {
+    if (mouseY < height - 37 && mouseY > height - 59) {
+      withinSlider = true;
+    }
   }
-  lastMousePosX = mouseX;
+  if (withinSlider) {
+    if (lastMousePosX < mouseX) {
+      minContributions++;
+    } else {
+      minContributions--;
+    }
+    println("Within slider");
+  } else {
+    if (lastMousePosX < mouseX) {
+      customRotationAngle -= 0.01;
+    } else {
+      customRotationAngle += 0.01;
+    }
+    println("NOT within slider");
+  }
+
+    lastMousePosX = mouseX;
 }
 
 void mouseWheel(MouseEvent event) {

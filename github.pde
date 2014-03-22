@@ -18,6 +18,8 @@ private static final float ZOOM_FACTOR_STEP_BIG = 20.0;
 private static final int   MAX_ZOOM_FACTOR = 350;
 private static final int   MIN_CONTRIB_STEP_BIG = 50;
 
+private static final String[] BOOKMARKS = { "owncloud/core", "twbs/bootstrap" };
+
 String repository;
 String token;
 JSONArray currentDataSet;
@@ -277,6 +279,19 @@ void normalKeyPressed() {
     case 'm':
       hideAllButMatching = !hideAllButMatching;
       break;
+    case 'b':
+      String selection = (String) JOptionPane.showInputDialog(frame,
+        "Use repo",
+        "Open bookmark",
+        JOptionPane.QUESTION_MESSAGE,
+        null,
+        BOOKMARKS,
+        BOOKMARKS[0]);
+        if (checkRepo(selection)) {
+          repository = selection;
+          updateRepo();
+        }
+        break;
     case 'o':
       String response = JOptionPane.showInputDialog(frame,
         "Enter REPO (username/password):",

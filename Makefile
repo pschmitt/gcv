@@ -24,12 +24,16 @@ ifndef RUN_ARGS
 RUN_ARGS = $(REPO)
 endif
 
+ifneq "$(TOKEN)" ""
+RUN_ARGS += -t $(TOKEN)
+endif
+
 all:
 	processing-java --sketch=$(SKETCH) --output=$(OUTPUTDIR) --export --force
 
 .PHONY: run
 run:
-	$(EXECUTABLE) $(RUN_ARGS) $(TOKEN)
+	$(EXECUTABLE) $(RUN_ARGS)
 
 .PHONY: clean
 clean:

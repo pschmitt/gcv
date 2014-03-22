@@ -60,6 +60,8 @@ void loadCommandLine() {
     System.exit(0);
   }
 
+  t = (String)options.valueOf("t");
+
   List nonOptArg = options.nonOptionArguments();
   if (!nonOptArg.isEmpty()) {
     String arg = (String)nonOptArg.get(0);
@@ -124,7 +126,7 @@ void getData() {
   currentDataSet = randomize ? randomArray : origData;
 }
 
-void getRepoStats(String token) {
+void getRepoStats() {
   try {
     String url = GITHUB_API_PREFIX + repository
                  + (token != null ? "?access_token=" + token : "");
@@ -149,7 +151,7 @@ void getRepoStats(String token) {
   }
 }
 
-void getContributorStats(String token) {
+void getContributorStats() {
   try {
     String url = GITHUB_API_PREFIX + repository + "/stats/contributors"
                  + (token != null ? "?access_token=" + token : "");
@@ -278,7 +280,7 @@ void normalKeyPressed() {
         JOptionPane.QUESTION_MESSAGE);
       if (checkRepo(response)) {
         repository = response;
-        update(token);
+        updateRepo();
       } else { // Invalid input or cancelled
         // Invalid input
         if (response != null && response.length() > 0) {
@@ -642,9 +644,9 @@ void draw() {
   }
 }
 
-void update(String token) {
-  getRepoStats(token);
-  getContributorStats(token);
+void updateRepo() {
+  getRepoStats();
+  getContributorStats();
   getData();
   randomColors();
 }
@@ -661,7 +663,7 @@ void setup() {
 
   // Get CLI parameters
   loadCommandLine();
-  update(token);
+  updateRepo();
 }
 
 // vim: set ft=processing et ts=2 :

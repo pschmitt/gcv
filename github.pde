@@ -154,13 +154,13 @@ void getContributorStats(String token) {
   } catch (RuntimeException e) {
     println("Caught an exception, exiting.");
     e.printStackTrace();
-    exit();
+    super.exit();
   }
 
   int contributors = origData.size();
   rotationAngle = TWO_PI / contributors;
 
-  println("# Contributors: " + contributors);
+  println("Contributors: " + contributors);
   println("rotationAngle: " + rotationAngle);
 }
 
@@ -621,7 +621,7 @@ void draw() {
 }
 
 void setup() {
-  size(400, 400);
+  size(800, 600);
   if (frame != null) {
     frame.setResizable(true);
   }

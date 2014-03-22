@@ -149,7 +149,7 @@ void getRepoStats() {
   } catch (Exception e) {
       println("Caught an exception, exiting.");
       e.printStackTrace();
-      exit();
+      System.exit(2);
   }
 }
 
@@ -162,7 +162,7 @@ void getContributorStats() {
   } catch (RuntimeException e) {
     println("Caught an exception, exiting.");
     e.printStackTrace();
-    super.exit();
+    System.exit(3);
   }
 
   int contributors = origData.size();
@@ -195,20 +195,17 @@ void mouseDragged(MouseEvent event) {
   }
   if (withinSlider) {
     if (lastMousePosX < mouseX) {
-      if(minContributions < maxContributions)
-      {
+      if (minContributions < maxContributions) {
         minContributions++;
       }
     } else {
-      if(minContributions > 0)
-      {
+      if (minContributions > 0) {
         minContributions--;
       }
     }
     println("Within slider");
   } else {
-    if (mouseX >= 0 && mouseX <width)
-    {
+    if (mouseX >= 0 && mouseX <width) {
       if (lastMousePosX < mouseX) {
         customRotationAngle -= 0.01;
       } else {
@@ -665,6 +662,8 @@ void draw() {
 }
 
 void updateRepo() {
+  maxContributions = 0;
+  minContributions = 0;
   getRepoStats();
   getContributorStats();
   getData();

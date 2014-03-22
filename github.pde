@@ -114,7 +114,7 @@ void getContributorStats(String token) {
                  + (token != null ? "?access_token=" + token : "");
     println("Contributors URL: " + url);
     origData = loadJSONArray(url);
-  } catch (Exception e) {
+  } catch (RuntimeException e) {
     println("Caught an exception, exiting.");
     e.printStackTrace();
     exit();
@@ -144,26 +144,36 @@ void randomColors() {
 void mouseDragged(MouseEvent event) {
   boolean withinSlider = false;
   if (mouseX > width / 4 && mouseX < 3 * width / 4) {
-    if (mouseY < height - 37 && mouseY > height - 59) {
+    if (mouseY < height - 22 && mouseY > height - 59) {
       withinSlider = true;
     }
   }
   if (withinSlider) {
     if (lastMousePosX < mouseX) {
-      minContributions++;
+      if(minContributions < maxContributions)
+      {
+        minContributions++;
+      }
     } else {
-      minContributions--;
+      if(minContributions > 0)
+      {
+        minContributions--;
+      }
     }
     println("Within slider");
   } else {
-    if (lastMousePosX < mouseX) {
-      customRotationAngle -= 0.01;
-    } else {
-      customRotationAngle += 0.01;
+    if (mouseX >= 0 && mouseX <width)
+    {
+      if (lastMousePosX < mouseX) {
+        customRotationAngle -= 0.01;
+      } else {
+        customRotationAngle += 0.01;
+      }
     }
     println("NOT within slider");
   }
 
+  println("Mouse X " + mouseX + "Mouse Y " + mouseY );
   lastMousePosX = mouseX;
 }
 

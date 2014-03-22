@@ -62,13 +62,16 @@ Properties loadCommandLine() {
 
   List nonOptArg = options.nonOptionArguments();
   if (!nonOptArg.isEmpty()) {
-    r = (String)nonOptArg.get(0);
-    if (r.matches("\\w+/\\w+")) {
-      println("Valid repo");
-    } else {
-      println("Invalid repo.");
-      usage();
-      System.exit(1);
+    String arg = (String)nonOptArg.get(0);
+    if (arg.length() > 0) {
+      if (arg.matches("^[a-zA-Z0-9\\\\-]+/[a-zA-Z0-9\\\\-]+$")) {
+        println("Valid repo");
+        r  = arg;
+      } else {
+        println("Invalid repo.");
+        usage();
+        System.exit(1);
+      }
     }
   }
 

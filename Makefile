@@ -5,6 +5,10 @@ TOKEN_FILE=token
 TOKEN=$(shell cat $(TOKEN_FILE))
 REPO=$(shell git config --get remote.origin.url | sed -e 's|.*github.com[:/]\?\(.*\)|\1|g' -e 's|\(.*\)\.git$$|\1|' | head -1)
 
+LIB_PATH=code
+JOPT_VERSION=4.6
+JOPT_URL=http://central.maven.org/maven2/net/sf/jopt-simple/jopt-simple/$(JOPT_VERSION)/jopt-simple-$(JOPT_VERSION).jar
+
 # http://stackoverflow.com/a/14061796
 # If the first argument is "run"...
 ifeq (run,$(firstword $(MAKECMDGOALS)))
@@ -28,8 +32,15 @@ ifneq "$(TOKEN)" ""
 RUN_ARGS += -t $(TOKEN)
 endif
 
-all:
+all: libs
 	processing-java --sketch=$(SKETCH) --output=$(OUTPUTDIR) --export --force
+
+libs: jopt
+
+jopt:
+	mkdir -p $(LIB_PATH)
+	wget $(JOPT_URL) -P $(LIB_PATH)
+
 
 .PHONY: run
 run:
@@ -37,4 +48,4 @@ run:
 
 .PHONY: clean
 clean:
-	rm -rf $(OUTPUTDIR)/*
+	rm -rf $(OUTPUTDIR) $(LIB_PATH)

@@ -4,10 +4,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.GregorianCalendar;
-
 import java.util.List;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import javax.swing.JOptionPane;
 
 private static final String DEFAULT_REPO = "pschmitt/github-contributions-visualisation";
 private static final String GITHUB_API_PREFIX = "https://api.github.com/repos/";
@@ -19,6 +19,7 @@ private static final int   MAX_ZOOM_FACTOR = 350;
 private static final int   MIN_CONTRIB_STEP_BIG = 50;
 
 String repository;
+String token;
 JSONArray currentDataSet;
 JSONArray origData;
 color[] colors;
@@ -46,8 +47,7 @@ void usage() {
   println(usage);
 }
 
-Properties loadCommandLine() {
-  Properties props = new Properties();
+void loadCommandLine() {
   // Default to self
   String r = DEFAULT_REPO;
   String t = null;
@@ -64,7 +64,7 @@ Properties loadCommandLine() {
   if (!nonOptArg.isEmpty()) {
     String arg = (String)nonOptArg.get(0);
     if (arg.length() > 0) {
-      if (arg.matches("^[a-zA-Z0-9\\\\-]+/[a-zA-Z0-9\\\\-]+$")) {
+      if (checkRepo(arg)) {
         println("Valid repo");
         r  = arg;
       } else {
@@ -75,22 +75,26 @@ Properties loadCommandLine() {
     }
   }
 
-  t = (String)options.valueOf("t");
-
   println("Repo: " + r + " Token: " + t);
 
-  props.setProperty("repo", r);
+  repository = r;
 
   if (t != null && t.length() > 0) {
-    props.setProperty("token", t);
+    token = t;
   }
-
-  return props;
 }
 
 /* }}} End of CLI options */
 
 /* {{{ Data related functions */
+
+boolean checkRepo(String repo) {
+  boolean valid = false;
+  if (repo != null && repo.length() > 0) {
+    valid = repo.matches("^[a-zA-Z0-9\\\\-]+/[a-zA-Z0-9\\\\-]+$");
+  }
+  return valid;
+}
 
 void getData() {
   currentDataSet = new JSONArray();
@@ -266,6 +270,24 @@ void normalKeyPressed() {
       break;
     case 'm':
       hideAllButMatching = !hideAllButMatching;
+      break;
+    case 'o':
+      String response = JOptionPane.showInputDialog(frame,
+        "Enter REPO (username/password):",
+        "Change repository",
+        JOptionPane.QUESTION_MESSAGE);
+      if (checkRepo(response)) {
+        repository = response;
+        update(token);
+      } else { // Invalid input or cancelled
+        // Invalid input
+        if (response != null && response.length() > 0) {
+          JOptionPane.showMessageDialog(frame,
+           "Not a valid repo: " + response,
+           "Input error",
+           JOptionPane.ERROR_MESSAGE);
+        }
+      }
       break;
     case 'r':
       zoomFactor = 1.0;
@@ -620,6 +642,13 @@ void draw() {
   }
 }
 
+void update(String token) {
+  getRepoStats(token);
+  getContributorStats(token);
+  getData();
+  randomColors();
+}
+
 void setup() {
   size(800, 600);
   if (frame != null) {
@@ -631,14 +660,8 @@ void setup() {
   smooth();
 
   // Get CLI parameters
-  Properties props = loadCommandLine();
-  repository = props.getProperty("repo", "No repository specified.");
-  String token = props.getProperty("token", null);
-
-  getRepoStats(token);
-  getContributorStats(token);
-  getData();
-  randomColors();
+  loadCommandLine();
+  update(token);
 }
 
 // vim: set ft=processing et ts=2 :

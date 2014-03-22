@@ -3,7 +3,7 @@ OUTPUTDIR=output
 EXECUTABLE=$(OUTPUTDIR)/github
 TOKEN_FILE=token
 TOKEN=$(shell cat $(TOKEN_FILE))
-REPO=$(shell git config --get remote.origin.url | sed 's|.*github.com/\(.*\)|\1|g')
+REPO=$(shell git config --get remote.origin.url | sed -e 's|.*github.com[:/]\?\(.*\)|\1|g' -e 's|\(.*\)\.git$$|\1|' | head -1)
 
 # http://stackoverflow.com/a/14061796
 # If the first argument is "run"...

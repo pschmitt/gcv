@@ -293,10 +293,13 @@ void normalKeyPressed() {
         }
         break;
     case 'o':
-      String response = JOptionPane.showInputDialog(frame,
+      String response = (String) JOptionPane.showInputDialog(frame,
         "Enter REPO (username/password):",
         "Change repository",
-        JOptionPane.QUESTION_MESSAGE);
+        JOptionPane.QUESTION_MESSAGE,
+        null,
+        null,
+        repository);
       if (checkRepo(response)) {
         repository = response;
         updateRepo();

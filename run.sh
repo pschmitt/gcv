@@ -1,3 +1,8 @@
 #!/usr/bin/env sh
 
-make run $*
+[[ $1 == "-b" ]] && {
+    make clean
+    make
+    shift
+}
+make run -- $*

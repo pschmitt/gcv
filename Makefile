@@ -3,6 +3,7 @@ OUTPUTDIR=output
 EXECUTABLE=$(OUTPUTDIR)/github
 TOKEN_FILE=token
 TOKEN=$(shell cat $(TOKEN_FILE))
+REPO=$(shell git config --get remote.origin.url | sed 's|https://github.com/\(.*\)|\1|g')
 
 # http://stackoverflow.com/a/14061796
 # If the first argument is "run"...
@@ -11,6 +12,9 @@ ifeq (run,$(firstword $(MAKECMDGOALS)))
 RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 # ...and turn them into do-nothing targets
 $(eval $(RUN_ARGS):;@:)
+ifndef RUN_ARGS
+RUN_ARGS = $(REPO)
+endif
 endif
 
 all:

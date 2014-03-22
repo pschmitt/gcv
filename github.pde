@@ -243,7 +243,9 @@ void mouseDragged(MouseEvent event) {
         minContributions--;
       }
     }
-    println("Within slider");
+    if (debug) {
+      println("Within slider");
+    }
   } else {
     if (mouseX >= 0 && mouseX <width) {
       if (lastMousePosX < mouseX) {
@@ -252,7 +254,9 @@ void mouseDragged(MouseEvent event) {
         customRotationAngle += 0.01;
       }
     }
-    println("NOT within slider");
+    if (debug) {
+      println("NOT within slider");
+    }
   }
 
   if (debug) {

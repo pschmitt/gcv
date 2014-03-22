@@ -262,10 +262,14 @@ void normalKeyPressed() {
       research = !research;
       break;
     case '+':
-     customRotationAngle += CUSTOM_ROTATION_STEP;
+      if (minContributions < maxContributions) {
+        minContributions++;
+      }
       break;
     case '-':
-      customRotationAngle -= CUSTOM_ROTATION_STEP;
+      if (minContributions > 0) {
+        minContributions--;
+      }
       break;
     case 'h':
       hideHelp = !hideHelp;
@@ -305,14 +309,10 @@ void normalKeyPressed() {
     case CODED:
       switch(keyCode) {
         case LEFT:
-          if (minContributions > 0) {
-            minContributions--;
-          }
+          customRotationAngle -= CUSTOM_ROTATION_STEP;
           break;
         case RIGHT:
-          if (minContributions < maxContributions) {
-            minContributions++;
-          }
+          customRotationAngle += CUSTOM_ROTATION_STEP;
           break;
         case UP:
           if (zoomFactor + ZOOM_FACTOR_STEP_BIG < MAX_ZOOM_FACTOR) {

@@ -18,7 +18,12 @@ private static final float ZOOM_FACTOR_STEP_BIG = 20.0;
 private static final int   MAX_ZOOM_FACTOR = 350;
 private static final int   MIN_CONTRIB_STEP_BIG = 50;
 
-private static final String[] BOOKMARKS = { "owncloud/core", "twbs/bootstrap" };
+private static final int MAX_RETRIES = 3;
+private static final String[] BOOKMARKS = { "owncloud/core", "twbs/bootstrap", "joyent/node", "jquery/jquery", "h5bp/html5-boilerplate", "rails/rails","Homebrew/homebrew", "pschmitt/github-contributions-visualisation" };
+
+// Runtime options
+boolean verbose = false;
+boolean debug = false;
 
 String repository;
 String token;
@@ -37,15 +42,16 @@ boolean randomize = true;
 boolean research = false;
 boolean hideAllButMatching = false;
 String searchName = "";
-
 int lastMousePosX = -1;
 
 /* {{{ CLI options */
 
 void usage() {
-  String usage = "Usage: github [-t TOKEN] REPO\n"
+  String usage = "Usage: github [-t TOKEN] [-d] [-v] REPO\n"
                + "REPO: username/repository\n"
-               + "TOKEN: Optional GitHub token";
+               + "TOKEN: Optional GitHub token\n"
+               + "-d: Debug mode\n"
+               + "-v: Verbose";
   println(usage);
 }
 
@@ -54,12 +60,22 @@ void loadCommandLine() {
   String r = DEFAULT_REPO;
   String t = null;
 
-  OptionParser parser = new OptionParser("t:h");
+  OptionParser parser = new OptionParser("t:hdv");
   OptionSet options = parser.parse(args);
 
   if (options.has("h")) {
     usage();
     System.exit(0);
+  }
+
+  verbose = options.has("v");
+  if (verbose) {
+    println("Verbose ON");
+  }
+
+  debug = options.has("d");
+  if (verbose) {
+    println("Debug ON");
   }
 
   t = (String)options.valueOf("t");
@@ -79,7 +95,9 @@ void loadCommandLine() {
     }
   }
 
-  println("Repo: " + r + " Token: " + t);
+  if (debug) {
+    println("Repo: " + r + " Token: " + t);
+  }
 
   repository = r;
 
@@ -123,16 +141,20 @@ void getData() {
     }
     randomArray.append(j);
     currentDataSet.remove(randomIndex);
-    println("Author " + login + " made "  + contributions + " contributions");
+    if (verbose) {
+      println("Author " + login + " made "  + contributions + " contributions");
+    }
   }
   currentDataSet = randomize ? randomArray : origData;
 }
 
-void getRepoStats() {
+void getRepoStats(int retries) {
   try {
     String url = GITHUB_API_PREFIX + repository
                  + (token != null ? "?access_token=" + token : "");
-    println("Stats URL: " + url);
+    if (debug) {
+      println("Stats URL: " + url);
+    }
     JSONObject repoStats = loadJSONObject(url);
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
     Date d = df.parse(repoStats.getString("created_at"));
@@ -143,33 +165,51 @@ void getRepoStats() {
 
     weeksSinceCreation = (int)Math.abs((now - then) / (1000 * 60 * 60 * 24 * 7));
 
-    println("Created at: " + d);
+    if (verbose) {
+      println("Created at: " + d);
+    }
   } catch (ParseException e) {
     println("Couldn't parse date..");
   } catch (Exception e) {
+    if (retries < MAX_RETRIES) {
+      println("Exception! Retrying... " + retries + "/" + MAX_RETRIES);
+      getRepoStats(++retries);
+    } else {
       println("Caught an exception, exiting.");
       e.printStackTrace();
       System.exit(2);
+    }
   }
 }
 
-void getContributorStats() {
+void getContributorStats(int retries) {
   try {
     String url = GITHUB_API_PREFIX + repository + "/stats/contributors"
                  + (token != null ? "?access_token=" + token : "");
-    println("Contributors URL: " + url);
+    if (debug) {
+      println("Contributors URL: " + url);
+    }
     origData = loadJSONArray(url);
   } catch (RuntimeException e) {
-    println("Caught an exception, exiting.");
-    e.printStackTrace();
-    System.exit(3);
+    if (retries < MAX_RETRIES) {
+      println("Exception! Retrying... " + retries + "/" + MAX_RETRIES);
+      getRepoStats(++retries);
+    } else {
+      println("Caught an exception, exiting.");
+      e.printStackTrace();
+      System.exit(3);
+    }
   }
 
   int contributors = origData.size();
   rotationAngle = TWO_PI / contributors;
 
-  println("Contributors: " + contributors);
-  println("rotationAngle: " + rotationAngle);
+  if (verbose) {
+    println("Contributors: " + contributors);
+  }
+  if (debug) {
+    println("rotationAngle: " + rotationAngle);
+  }
 }
 
 void randomColors() {
@@ -215,7 +255,9 @@ void mouseDragged(MouseEvent event) {
     println("NOT within slider");
   }
 
-  println("Mouse X " + mouseX + "Mouse Y " + mouseY );
+  if (debug) {
+    println("Mouse X " + mouseX + "Mouse Y " + mouseY );
+  }
   lastMousePosX = mouseX;
 }
 
@@ -364,12 +406,16 @@ void normalKeyPressed() {
           }
           break;
         default:
-          println("Special key Pressed: " + keyCode);
+          if (debug) {
+            println("Special key Pressed: " + keyCode);
+          }
           break;
       }
       break;
     default:
-      println("Pressed: " + key);
+      if (debug) {
+        println("Pressed: " + key);
+      }
       break;
   }
 }
@@ -554,7 +600,7 @@ void drawTransparencyExplanation() {
 
 void drawResearch() {
   fill(100);
-  text("Reseach : " + searchName, 100, height - 40);
+  text("Reseach: " + searchName, 100, height - 40);
 }
 
 void drawMinContributions() {
@@ -664,14 +710,15 @@ void draw() {
 void updateRepo() {
   maxContributions = 0;
   minContributions = 0;
-  getRepoStats();
-  getContributorStats();
+  getRepoStats(0);
+  getContributorStats(0);
   getData();
   randomColors();
 }
 
 void setup() {
   size(800, 600);
+
   if (frame != null) {
     frame.setResizable(true);
   }

@@ -12,9 +12,16 @@ ifeq (run,$(firstword $(MAKECMDGOALS)))
 RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 # ...and turn them into do-nothing targets
 $(eval $(RUN_ARGS):;@:)
+endif
+
+# Fallback
+ifeq "$(REPO)" ""
+REPO=pschmitt/github-contributions-visualisation
+endif
+
+# If no arg supplied guess em
 ifndef RUN_ARGS
 RUN_ARGS = $(REPO)
-endif
 endif
 
 all:

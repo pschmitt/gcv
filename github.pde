@@ -87,7 +87,7 @@ void getRepoStats(String token) {
     String url = GITHUB_API_PREFIX + repository
                  + (token != null ? "?access_token=" + token : "");
     println("Stats URL: " + url);
-JSONObject repoStats = loadJSONObject(url);
+    JSONObject repoStats = loadJSONObject(url);
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
     Date d = df.parse(repoStats.getString("created_at"));
     Date n = new Date();
@@ -322,6 +322,7 @@ void drawTextAroundElipse(String msg, float r) {
       text(b.toString(), 0, 0);
     }
     popMatrix();
+
     // Move halfway again
     arclength += w / 2;
   }
@@ -419,6 +420,7 @@ void drawBarExplanation() {
     text("Username", 8, 12);
   }
   popMatrix();
+
   for (int i = 0; i <= 100; i += 10) {
     text(Integer.toString(i), 75, height - 40 - (10 * i));
   }
@@ -499,6 +501,7 @@ void drawGraduations(double maxSized) {
   for (int g : graduations) {
     if (g < maxContributions) {
       noFill();
+
       pushStyle();
       {
         stroke(100);
@@ -530,6 +533,7 @@ void drawCenter(double maxSized) {
 void draw() {
   fill(20);
   clear();
+
   pushMatrix();
   {
     translate(width / 2, height / 2);
@@ -548,6 +552,7 @@ void draw() {
     drawCenter(maxSized);
   }
   popMatrix();
+
   if (research) {
     drawResearch();
   }

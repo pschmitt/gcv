@@ -5,6 +5,10 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.GregorianCalendar;
 
+import java.util.List;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 private static final String DEFAULT_REPO = "pschmitt/github-contributions-visualisation";
 private static final String GITHUB_API_PREFIX = "https://api.github.com/repos/";
 
@@ -35,17 +39,47 @@ int lastMousePosX = -1;
 
 /* {{{ CLI options */
 
+void usage() {
+  String usage = "Usage: github [-t TOKEN] REPO\n"
+               + "REPO: username/repository\n"
+               + "TOKEN: Optional GitHub token";
+  println(usage);
+}
+
 Properties loadCommandLine() {
   Properties props = new Properties();
   // Default to self
   String r = DEFAULT_REPO;
-  if (args.length > 0 && args[0] != null) {
-    r = args[0];
+  String t = null;
+
+  OptionParser parser = new OptionParser("t:h");
+  OptionSet options = parser.parse(args);
+
+  if (options.has("h")) {
+    usage();
+    System.exit(0);
   }
+
+  List nonOptArg = options.nonOptionArguments();
+  if (!nonOptArg.isEmpty()) {
+    r = (String)nonOptArg.get(0);
+    if (r.matches("\\w+/\\w+")) {
+      println("Valid repo");
+    } else {
+      println("Invalid repo.");
+      usage();
+      System.exit(1);
+    }
+  }
+
+  t = (String)options.valueOf("t");
+
+  println("Repo: " + r + " Token: " + t);
+
   props.setProperty("repo", r);
 
-  if (args.length > 1 && args[1] != null) {
-    props.setProperty("token", args[1]);
+  if (t != null && t.length() > 0) {
+    props.setProperty("token", t);
   }
 
   return props;

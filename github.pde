@@ -34,6 +34,7 @@ String searchName = "";
 int lastMousePosX = -1;
 
 /* {{{ CLI options */
+
 Properties loadCommandLine() {
   Properties props = new Properties();
   // Default to self
@@ -138,6 +139,8 @@ void randomColors() {
 
 /* {{{ Input functions */
 
+/* {{{ Mouse functions */
+
 void mouseDragged(MouseEvent event) {
   boolean withinSlider = false;
   if (mouseX > width / 4 && mouseX < 3 * width / 4) {
@@ -175,6 +178,8 @@ void mouseWheel(MouseEvent event) {
   }
 }
 
+/* }}} End of mouse functions */
+
 void searchKeyPressed() {
   switch (key) {
     case ESC:
@@ -194,6 +199,8 @@ void searchKeyPressed() {
       }
   }
 }
+
+/* {{{ Normal key press */
 
 void normalKeyPressed() {
   switch (key) {
@@ -280,6 +287,8 @@ void normalKeyPressed() {
       break;
   }
 }
+
+/* }}} End of normal key press */
 
 void keyPressed() {
   if (research){

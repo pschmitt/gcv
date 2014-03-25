@@ -368,6 +368,16 @@ void normalKeyPressed() {
       randomize = !randomize;
       getData();
       break;
+    case 'e':
+      EPILEPSY_MODE = !EPILEPSY_MODE;
+      if(EPILEPSY_MODE)
+      {
+        loop();
+      }else
+      {
+        noLoop();
+      }
+      break;
     case 'q':
     case 'Q':
       key = ESC; //ask to Papplet to exit
@@ -489,6 +499,9 @@ void drawTitle(double maxSized) {
 }
 
 void drawData(double maxSized) {
+    if (EPILEPSY_MODE) {
+      randomColors();
+    }
   for (int i = 0; i < currentDataSet.size(); i++) {
       JSONObject current = currentDataSet.getJSONObject(i);
       JSONObject author = current.getJSONObject("author");
@@ -498,9 +511,6 @@ void drawData(double maxSized) {
       boolean matches = searchName.length() > 0 && login.matches(".*" + searchName + ".*");
 
       rotate(rotationAngle);
-      if (EPILEPSY_MODE) {
-        randomColors();
-      }
       if (hideAllButMatching && searchName.length() > 0 && !matches) {
         continue;
       }
@@ -738,9 +748,7 @@ void setup() {
   // Default font settings
   textFont(createFont("Sans", 12, true));
   smooth();
-  if (EPILEPSY_MODE) {
-    noLoop();
-  }
+  noLoop();
 
   // Get CLI parameters
   loadCommandLine();

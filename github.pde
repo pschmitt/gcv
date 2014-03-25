@@ -18,6 +18,7 @@ private static final float ZOOM_FACTOR_STEP_BIG = 20.0;
 private static final int   MAX_ZOOM_FACTOR = 350;
 private static final int   MIN_CONTRIB_STEP_BIG = 50;
 
+boolean EPILEPSY_MODE= false;
 private static final int MAX_RETRIES = 3;
 private static final String[] BOOKMARKS = { "owncloud/core", "twbs/bootstrap", "joyent/node", "jquery/jquery", "h5bp/html5-boilerplate", "rails/rails","Homebrew/homebrew", "pschmitt/github-contributions-visualisation" };
 
@@ -60,7 +61,7 @@ void loadCommandLine() {
   String r = DEFAULT_REPO;
   String t = null;
 
-  OptionParser parser = new OptionParser("t:hdv");
+  OptionParser parser = new OptionParser("t:hdve");
   OptionSet options = parser.parse(args);
 
   if (options.has("h")) {
@@ -77,6 +78,8 @@ void loadCommandLine() {
   if (verbose) {
     println("Debug ON");
   }
+
+  EPILEPSY_MODE = options.has("e");
 
   t = (String)options.valueOf("t");
 
@@ -495,7 +498,9 @@ void drawData(double maxSized) {
       boolean matches = searchName.length() > 0 && login.matches(".*" + searchName + ".*");
 
       rotate(rotationAngle);
-      randomColors();
+      if (EPILEPSY_MODE) {
+        randomColors();
+      }
       if (hideAllButMatching && searchName.length() > 0 && !matches) {
         continue;
       }
@@ -733,7 +738,9 @@ void setup() {
   // Default font settings
   textFont(createFont("Sans", 12, true));
   smooth();
-  noLoop();
+  if (EPILEPSY_MODE) {
+    noLoop();
+  }
 
   // Get CLI parameters
   loadCommandLine();

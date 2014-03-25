@@ -263,6 +263,7 @@ void mouseDragged(MouseEvent event) {
     println("Mouse X " + mouseX + "Mouse Y " + mouseY );
   }
   lastMousePosX = mouseX;
+  redraw();
 }
 
 void mouseWheel(MouseEvent event) {
@@ -274,6 +275,7 @@ void mouseWheel(MouseEvent event) {
   if (zoomFactor > MAX_ZOOM_FACTOR) {
     zoomFactor = MAX_ZOOM_FACTOR;
   }
+  redraw();
 }
 
 /* }}} End of mouse functions */
@@ -432,6 +434,7 @@ void keyPressed() {
   } else {
     normalKeyPressed();
   }
+  redraw();
 }
 
 /* }}} End of input functions */
@@ -492,7 +495,7 @@ void drawData(double maxSized) {
       boolean matches = searchName.length() > 0 && login.matches(".*" + searchName + ".*");
 
       rotate(rotationAngle);
-
+      randomColors();
       if (hideAllButMatching && searchName.length() > 0 && !matches) {
         continue;
       }
@@ -730,6 +733,7 @@ void setup() {
   // Default font settings
   textFont(createFont("Sans", 12, true));
   smooth();
+  noLoop();
 
   // Get CLI parameters
   loadCommandLine();

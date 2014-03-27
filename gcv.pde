@@ -9,7 +9,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import javax.swing.JOptionPane;
 
-private static final String DEFAULT_REPO = "pschmitt/github-contributions-visualisation";
+private static final String DEFAULT_REPO = "pschmitt/gcv";
 private static final String GITHUB_API_PREFIX = "https://api.github.com/repos/";
 
 private static final float CUSTOM_ROTATION_STEP = 0.01;
@@ -20,7 +20,7 @@ private static final int   MIN_CONTRIB_STEP_BIG = 50;
 
 boolean EPILEPSY_MODE= false;
 private static final int MAX_RETRIES = 3;
-private static final String[] BOOKMARKS = { "owncloud/core", "twbs/bootstrap", "joyent/node", "jquery/jquery", "h5bp/html5-boilerplate", "rails/rails","Homebrew/homebrew", "pschmitt/github-contributions-visualisation" };
+private static final String[] BOOKMARKS = { "owncloud/core", "twbs/bootstrap", "joyent/node", "jquery/jquery", "h5bp/html5-boilerplate", "rails/rails","Homebrew/homebrew", DEFAULT_REPO };
 
 // Runtime options
 boolean verbose = false;
@@ -48,9 +48,9 @@ int lastMousePosX = -1;
 /* {{{ CLI options */
 
 void usage() {
-  String usage = "Usage: github [-t TOKEN] [-d] [-v] REPO\n"
+  String usage = "Usage: gcv [-t TOKEN] [-d] [-v] REPO\n"
                + "REPO: username/repository\n"
-               + "TOKEN: Optional GitHub token\n"
+               + "TOKEN: Optional GitHub auth token\n"
                + "-d: Debug mode\n"
                + "-v: Verbose";
   println(usage);

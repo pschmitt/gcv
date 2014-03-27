@@ -4,7 +4,7 @@ gcv - GitHub Contribution Visualisation
 
 Student project - Visualisation de données 2014
 
-Authors: Philipp Schmitt (pschmitt) and Vincent Lamouroux (skad)
+Authors: Philipp Schmitt ([pschmitt](https://github.com/pschmitt)) and Vincent Lamouroux ([skad](https://github.com/skad))
 
 ## Installation
 

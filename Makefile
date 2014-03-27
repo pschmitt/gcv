@@ -1,6 +1,6 @@
-SKETCH=../github
+SKETCH=../gcv
 OUTPUTDIR=output
-EXECUTABLE=$(OUTPUTDIR)/github
+EXECUTABLE=$(OUTPUTDIR)/gcv
 TOKEN_FILE=token
 TOKEN=$(shell cat $(TOKEN_FILE))
 REPO=$(shell git config --get remote.origin.url | sed -e 's|.*github.com[:/]\?\(.*\)|\1|g' -e 's|\(.*\)\.git$$|\1|' | head -1)
@@ -46,6 +46,10 @@ jopt:
 .PHONY: run
 run:
 	$(EXECUTABLE) $(RUN_ARGS)
+
+.PHONY: present
+present:
+	processing-java --sketch=$(SKETCH) --output=$(OUTPUTDIR) --export --force --present
 
 .PHONY: clean
 clean:

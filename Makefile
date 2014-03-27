@@ -1,6 +1,7 @@
-SKETCH=../gcv
+CWD=$(shell basename $$(pwd))
+SKETCH=../$(CWD)
 OUTPUTDIR=output
-EXECUTABLE=$(OUTPUTDIR)/gcv
+EXECUTABLE=$(OUTPUTDIR)/$(CWD)
 TOKEN_FILE=token
 TOKEN=$(shell cat $(TOKEN_FILE))
 REPO=$(shell git config --get remote.origin.url | sed -e 's|.*github.com[:/]\?\(.*\)|\1|g' -e 's|\(.*\)\.git$$|\1|' | head -1)
@@ -21,7 +22,7 @@ endif
 
 # Fallback
 ifeq "$(REPO)" ""
-REPO=pschmitt/github-contributions-visualisation
+REPO=pschmitt/gcv
 endif
 
 # If no arg supplied guess em

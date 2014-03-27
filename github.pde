@@ -167,7 +167,6 @@ void getRepoStats(int retries) {
     long then = d.getTime();
 
     weeksSinceCreation = (int)Math.abs((now - then) / (1000 * 60 * 60 * 24 * 7));
-
     if (verbose) {
       println("Created at: " + d);
     }
@@ -175,7 +174,7 @@ void getRepoStats(int retries) {
     println("Couldn't parse date..");
   } catch (Exception e) {
     if (retries < MAX_RETRIES) {
-      println("Exception! Retrying... " + retries + "/" + MAX_RETRIES);
+      println("Exception! Retrying... " + (retries + 1) + "/" + MAX_RETRIES);
       getRepoStats(++retries);
     } else {
       println("Caught an exception, exiting.");
@@ -195,8 +194,8 @@ void getContributorStats(int retries) {
     origData = loadJSONArray(url);
   } catch (RuntimeException e) {
     if (retries < MAX_RETRIES) {
-      println("Exception! Retrying... " + retries + "/" + MAX_RETRIES);
-      getRepoStats(++retries);
+      println("Exception! Retrying... " + (retries + 1) + "/" + MAX_RETRIES);
+      getContributorStats(++retries);
     } else {
       println("Caught an exception, exiting.");
       e.printStackTrace();
@@ -370,11 +369,9 @@ void normalKeyPressed() {
       break;
     case 'e':
       EPILEPSY_MODE = !EPILEPSY_MODE;
-      if(EPILEPSY_MODE)
-      {
+      if (EPILEPSY_MODE) {
         loop();
-      }else
-      {
+      } else {
         noLoop();
       }
       break;
